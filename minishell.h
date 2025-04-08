@@ -33,6 +33,11 @@ struct s_token	*tokenize_input(char *input);
 void			print_tokens(struct s_token *head);
 void			free_tokens(struct s_token *head);
 
+//builtins
+int check_cmd(t_token *cmd_token);
+void execute_builtin(char *cmd);
+
+
 void    Getcwd(char *buf, size_t size);
 char	**check_cmd_path(char **cmd, char **envp);
 char	*get_env_path(char **envp);

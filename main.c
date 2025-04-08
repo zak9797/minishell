@@ -1,26 +1,6 @@
 #include"minishell.h"
 
 // Function to create a new token
-int check_cmd(t_token *cmd_token)
-{
-    // List of built-in commands
-    char *builtins[] = {"echo", "cd", "pwd", "export", "unset", "env", "exit"};
-    int i = 0;
-
-    // Check if the token is a command and compare it to the built-ins
-    if (cmd_token && cmd_token->type == T_WORD)
-    {
-        for (i = 0; i < 7; i++)
-        {
-            if (strcmp(cmd_token->value, builtins[i]) == 0)
-            {
-                return 1; // It's a built-in command
-            }
-        }
-    }
-
-    return 0; // It's not a built-in command
-}
 
 static t_token_type get_token_type(char *input, int i)
 {
@@ -137,6 +117,7 @@ void free_tokens(t_token *head)
 		free(temp);
 	}
 }
+
 int main(void)
 {
 	char *input;
@@ -148,6 +129,8 @@ int main(void)
 			break;
 
 		t_token *tokens = tokenize_input(input);
+        if (tokens && check_cmd(tokens))  // check if it's a built-in
+        execute_builtin(tokens->value);
 		print_tokens(tokens);
 		free_tokens(tokens);
 		free(input);
