@@ -10,12 +10,28 @@
 #include <readline/history.h>  
 #include <stdbool.h> 
 
+typedef enum e_token_type
+{
+	T_WORD,
+	T_PIPE,
+	T_OUTPUT_REDIRECT,
+	T_APPEND_OUTPUT,
+	T_INPUT_REDIRECT,
+	T_HEREDOC,
+	T_BUILTIN_COMMAND  // New type for built-in commands
+}	t_token_type;
+
 typedef struct s_token
 {
-    char *value;
-    char *type;
-    struct s_token *next;
-}   t_token;
+	t_token_type		type;
+	char				*value;
+	struct s_token		*next;
+}	t_token;
+
+// Function declarations
+struct s_token	*tokenize_input(char *input);
+void			print_tokens(struct s_token *head);
+void			free_tokens(struct s_token *head);
 
 void    Getcwd(char *buf, size_t size);
 char	**check_cmd_path(char **cmd, char **envp);

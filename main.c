@@ -1,143 +1,157 @@
 #include"minishell.h"
 
-#include <readline/readline.h>
-#include <readline/history.h>  
-
-
 // Function to create a new token
-t_token *create_token(char *value, char *type) {
-    t_token *new_token = malloc(sizeof(t_token));
-    if (!new_token) {
-        perror("malloc failed");
-        return NULL;
-    }
-    new_token->value = strdup(value); // Copy the string into the token's value
-    new_token->type = strdup(type);   // Copy the string into the token's type
-    new_token->next = NULL;
-    return new_token;
-}
-
-// Function to append a token to the linked list
-void append_token(t_token **head, char *value, char *type) {
-    t_token *new_token = create_token(value, type);
-    if (!new_token) return;  // If creation fails, return
-
-    if (!*head) {
-        *head = new_token;  // If list is empty, set head to the new token
-    } else {
-        t_token *current = *head;
-        while (current->next) {
-            current = current->next;  // Traverse to the last node
-        }
-        current->next = new_token;  // Append the new token
-    }
-}
-
-// Function to free the token list
-void free_token_list(t_token *head) {
-    t_token *current = head;
-    t_token *next;
-    
-    while (current) {
-        next = current->next;
-        free(current->value);
-        free(current->type);
-        free(current);
-        current = next;
-    }
-}
-
-// Function to count the number of words in a line
-int count_words(char *line) {
-    int count = 0;
-    int i = 0;
-
-    while (line[i]) {
-        while (isspace(line[i])) i++;  // Skip leading spaces
-        if (!line[i]) break;          // End of string
-        count++;
-        while (!isspace(line[i]) && line[i] != '\0') i++;  // Skip current word
-    }
-
-    return count;
-}
-bool is_builtin_command(char *command) 
+int check_cmd(t_token *cmd_token)
 {
-    const char *builtin_commands[] = {"cd", "exit", "echo", "pwd", "env", "set", NULL};
-    for (int i = 0; builtin_commands[i] != NULL; i++) {
-        if (strcmp(command, builtin_commands[i]) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-// Tokenizer function that processes the input line and fills the token list
-void tokenize(char *line, t_token **token_list) {
+    // List of built-in commands
+    char *builtins[] = {"echo", "cd", "pwd", "export", "unset", "env", "exit"};
     int i = 0;
-    int n = 0;
-    char *word = NULL;
 
-    while (line[i]) {
-        // Skip spaces
-        while (isspace(line[i])) i++;
-
-        if (line[i] == '\0') break;
-
-        n = 0;
-        while (!isspace(line[i]) && line[i] != '\0') {
-            n++;
-            i++;
+    // Check if the token is a command and compare it to the built-ins
+    if (cmd_token && cmd_token->type == T_WORD)
+    {
+        for (i = 0; i < 7; i++)
+        {
+            if (strcmp(cmd_token->value, builtins[i]) == 0)
+            {
+                return 1; // It's a built-in command
+            }
         }
+    }
 
-        // Allocate space for the word and copy it
-        word = malloc(n + 1);
-        if (word) {
-            strncpy(word, &line[i - n], n);
-            word[n] = '\0';  // Null-terminate the word
+    return 0; // It's not a built-in command
+}
+
+static t_token_type get_token_type(char *input, int i)
+{
+    if (input[i] == '|')
+        return T_PIPE;
+    else if (input[i] == '<' && input[i + 1] == '<')
+        return T_HEREDOC;  // '<<'
+    else if (input[i] == '>' && input[i + 1] == '>')
+        return T_APPEND_OUTPUT;  // '>>'
+    else if (input[i] == '>')
+        return T_OUTPUT_REDIRECT;  // '>'
+    else if (input[i] == '<')
+        return T_INPUT_REDIRECT;   // '<'
+    return T_WORD;
+}
+
+static t_token *create_token(t_token_type type, char *value)
+{
+	t_token *new = malloc(sizeof(t_token));
+	if (!new)
+		return NULL;
+	new->type = type;
+	new->value = strdup(value);
+	new->next = NULL;
+	return new;
+}
+
+static void	add_token(t_token **head, t_token *new)
+{
+	if (!*head)
+		*head = new;
+	else
+	{
+		t_token *temp = *head;
+		while (temp->next)
+			temp = temp->next;
+		temp->next = new;
+	}
+}
+
+t_token *tokenize_input(char *input)
+{
+	t_token *tokens = NULL;
+	int i = 0;
+
+	while (input[i])
+	{
+		if (isspace(input[i]))
+		{
+			i++;
+			continue;
+		}
+		else if ((input[i] == '>' && input[i + 1] == '>') || (input[i] == '<' && input[i + 1] == '<'))
+		{
+			char symbol[3] = { input[i], input[i + 1], '\0' };
+			add_token(&tokens, create_token(get_token_type(input, i), symbol));
+			i += 2;  // Skip the next character as it's part of the operator
+		}
+		else if (input[i] == '>' || input[i] == '<' || input[i] == '|')
+		{
+			char symbol[2] = { input[i], '\0' };
+			add_token(&tokens, create_token(get_token_type(input, i), symbol));
+			i++;
+		}
+		else
+		{
+			int start = i;
+			while (input[i] && !isspace(input[i]) && input[i] != '|' && input[i] != '<' && input[i] != '>')
+				i++;
+			char *word = strndup(&input[start], i - start);
+			add_token(&tokens, create_token(T_WORD, word));
+			free(word);
+		}
+	}
+	return tokens;
+}
+void print_tokens(t_token *head)
+{
+    while (head)
+    {
+        const char *type_str;
+        if (head->type == T_WORD)
+        {
+            if (check_cmd(head))
+                type_str = "BUILT-IN COMMAND";  // If it's a built-in command
+            else
+                type_str = "COMMAND";  // If it's just a regular command
         }
+        else if (head->type == T_PIPE)
+            type_str = "PIPE";
+        else if (head->type == T_OUTPUT_REDIRECT)
+            type_str = "OUTPUT REDIRECT";
+        else if (head->type == T_APPEND_OUTPUT)
+            type_str = "APPEND OUTPUT";
+        else if (head->type == T_INPUT_REDIRECT)
+            type_str = "INPUT REDIRECT";
+        else if (head->type == T_HEREDOC)
+            type_str = "HEREDOC";
+        else
+            type_str = "UNKNOWN";
 
-        // Check if the word is a built-in command
-        char *type = is_builtin_command(word) ? "builtin" : "word";
-
-        append_token(token_list, word, type);  // Store token with appropriate type
-        free(word);
+        printf("Type: %-15s | Value: '%s'\n", type_str, head->value);
+        head = head->next;
     }
 }
 
-// Function to print tokens (for debugging)
-void print_tokens(t_token *head) {
-    t_token *current = head;
-    int index = 0;
-
-    while (current) {
-        printf("Token[%d]: '%s' (Type: '%s')\n", index++, current->value, current->type);
-        current = current->next;
-    }
+void free_tokens(t_token *head)
+{
+	while (head)
+	{
+		t_token *temp = head;
+		head = head->next;
+		free(temp->value);
+		free(temp);
+	}
 }
+int main(void)
+{
+	char *input;
 
-int main() {
-    char *read;
-    t_token *tokens = NULL;
+	while (1)
+	{
+		input = readline("minishell$ ");
+		if (!input)
+			break;
 
-    while (1) {
-        read = readline("minishell > ");
-        if (read == NULL) {
-            printf("\nExiting minishell...\n");
-            break;
-        }
+		t_token *tokens = tokenize_input(input);
+		print_tokens(tokens);
+		free_tokens(tokens);
+		free(input);
+	}
 
-        // Tokenize the input and store in the linked list
-        tokenize(read, &tokens);
-
-        // Print the tokens (for debugging)
-        print_tokens(tokens);
-
-        // Free the memory for the tokens
-        free_token_list(tokens);
-        tokens = NULL;  // Reset the token list for the next loop
-
-        free(read);  // Free the memory allocated by readline
-    }
-
-    return 0;
+	return 0;
 }

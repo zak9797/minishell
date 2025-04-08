@@ -1,39 +1,39 @@
 NAME        =   minishell
 CC          =   cc
-CFLAGS      =   -Wall -Wextra -Werror -g
+CFLAGS      =   -Wall -Wextra -Werror -g -I$(LIBFT_INC) -I/usr/include/readline
 RM          =   rm -rf
 
-# Add the path to your libft directory
+# Libft
 LIBFT_DIR   =   libft
 LIBFT       =   $(LIBFT_DIR)/libft.a
 LIBFT_INC   =   $(LIBFT_DIR)
 
-# Readline path (this assumes the default installation location)
-READLINE_INC =   -I/usr/include/readline
+# Readline
 READLINE_LIB =   -lreadline
 
+# Sources and objects
 SRC         =   main.c utilits.c
 OBJS        =   $(SRC:.c=.o)
 
-# Include the libft directory and link libft
-CFLAGS      +=  -I$(LIBFT_INC) $(READLINE_INC)  # Add libft and readline include directories to CFLAGS
-LDFLAGS     =   $(LIBFT) $(READLINE_LIB)         # Link with the libft and readline libraries
+# Linker flags (libraries only)
+LDFLAGS     =   $(LIBFT) $(READLINE_LIB)
 
+# Rules
 all:    $(NAME)
 
 $(NAME):    $(OBJS) $(LIBFT)
-	$(CC) $(OBJS) $(CFLAGS) $(LDFLAGS) -o $(NAME)
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(NAME)
 
 $(LIBFT):
-	$(MAKE) -C $(LIBFT_DIR)	# Build the libft library if not built already
+	$(MAKE) -C $(LIBFT_DIR)
 
 clean:
 	$(RM) $(OBJS)
-	$(MAKE) -C $(LIBFT_DIR) clean  # Clean libft objects
+	$(MAKE) -C $(LIBFT_DIR) clean
 
 fclean: clean
 	$(RM) $(NAME)
-	$(MAKE) -C $(LIBFT_DIR) fclean  # Clean libft library
+	$(MAKE) -C $(LIBFT_DIR) fclean
 
 re: fclean all
 
