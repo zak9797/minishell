@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   libft.h                                            :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: zsalah <marvin@42.fr>                      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/30 17:33:39 by zsalah            #+#    #+#             */
-/*   Updated: 2024/08/30 17:33:45 by zsalah           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef LIBFT_H
 # define LIBFT_H
 # include <stdlib.h>
@@ -62,10 +50,22 @@ int					ft_strncmp(const char *s1, const char *s2, size_t n);
 char				*ft_strnstr(const char *big, const char *little,
 						size_t len);
 char				*ft_strrchr(const char *s, int c);
-int				ft_strcmp(const char *s1, const char *s2);
+int					ft_strcmp(const char *s1, const char *s2);
 char				*ft_strtrim(const char *s1, const char *set);
 char				*ft_substr(const char *s, unsigned int start, size_t len);
 int					ft_tolower(int c);
 int					ft_toupper(int c);
+
+/* ft_printf function prototypes */
+int					ft_printf(const char *format, ...);
+int					ft_putchar(char c);
+int					ft_putstr(char *s);
+int					ft_putnbr(int n);
+int					ft_putaddress(void *p);
+int					ft_puthexa(unsigned int n);
+int					ft_putunsigned(unsigned int n);
+
+/* get_next_line function prototypes */
+char				*get_next_line(int fd);
 
 #endif

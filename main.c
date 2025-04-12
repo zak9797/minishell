@@ -1,4 +1,4 @@
-#include"minishell.h"
+#include "minishell.h"
 
 // Function to create a new token
 
@@ -53,7 +53,7 @@ t_token *tokenize_input(char *input)
 			i++;
 			continue;
 		}
-		else if ((input[i] == '>' && input[i + 1] == '>') || (input[i] == '<' && input[i + 1] == '<'))
+		if ((input[i] == '>' && input[i + 1] == '>') || (input[i] == '<' && input[i + 1] == '<'))
 		{
 			char symbol[3] = { input[i], input[i + 1], '\0' };
 			add_token(&tokens, create_token(get_token_type(input, i), symbol));
@@ -77,6 +77,7 @@ t_token *tokenize_input(char *input)
 	}
 	return tokens;
 }
+
 void print_tokens(t_token *head)
 {
     while (head)
@@ -107,34 +108,101 @@ void print_tokens(t_token *head)
     }
 }
 
-void free_tokens(t_token *head)
+char **expand_input(const char *input)
 {
-	while (head)
-	{
-		t_token *temp = head;
-		head = head->next;
-		free(temp->value);
-		free(temp);
-	}
+    if (!input)
+        return NULL;
+
+    // Duplicate input since strtok modifies it
+    char *input_copy = strdup(input);
+    if (!input_copy)
+        return NULL;
+
+    int count = 0;
+    char *tmp = strdup(input);
+    char *token = strtok(tmp, " ");
+    while (token)
+    {
+        count++;
+        token = strtok(NULL, " ");
+    }
+    free(tmp);
+
+    // Allocate space for array of strings
+    char **result = malloc(sizeof(char *) * (count + 1));
+    if (!result)
+    {
+        free(input_copy);
+        return NULL;
+    }
+
+    int i = 0;
+    token = strtok(input_copy, " ");
+    while (token)
+    {
+        result[i++] = strdup(token); // duplicate each token
+        token = strtok(NULL, " ");
+    }
+    result[i] = NULL;
+
+    free(input_copy);
+    return result;
+}
+char *join_args(char **args)
+{
+    if (!args || !*args)
+        return NULL;
+
+    size_t len = 0;
+    for (int i = 0; args[i]; i++)
+        len += strlen(args[i]) + 1;
+
+    char *joined = malloc(len);
+    if (!joined)
+        return NULL;
+
+    joined[0] = '\0';
+    for (int i = 0; args[i]; i++)
+    {
+        strcat(joined, args[i]);
+        if (args[i + 1])
+            strcat(joined, " ");
+    }
+    return joined;
 }
 
-int main(void)
+int main(int argc, char **argv, char **envp)
 {
-	char *input;
+    (void)argc;
+    (void)argv;
+    char *input;
 
-	while (1)
-	{
-		input = readline("minishell$ ");
-		if (!input)
-			break;
+    // ✅ Our custom environment linked list
+    t_env *env = init_env(envp);
+while (1)
+{
+    input = readline("minishell$ ");
+    if (!input)
+        break;
 
-		t_token *tokens = tokenize_input(input);
-        if (tokens && check_cmd(tokens))  // check if it's a built-in
-        execute_builtin(tokens->value);
-		print_tokens(tokens);
-		free_tokens(tokens);
-		free(input);
-	}
+    char **expanded_input = expand_input(input);
+    char *joined_input = join_args(expanded_input);
 
-	return 0;
+    t_token *tokens = tokenize_input(joined_input);
+    if (tokens && check_cmd(tokens))
+        execute_builtin(tokens, env);
+
+    print_tokens(tokens);
+
+    // Free everything
+    for (int j = 0; expanded_input[j]; j++)
+        free(expanded_input[j]);
+    free(expanded_input);
+    free(joined_input);
+    free(input);
+}
+	//free(input);
+	//free_env(env);
+    // TODO: free your t_env list here
+    return 0;
 }

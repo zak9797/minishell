@@ -1,6 +1,6 @@
 NAME        =   minishell
 CC          =   cc
-CFLAGS      =   -Wall -Wextra -Werror -g -I$(LIBFT_INC) -I/usr/include/readline
+CFLAGS = -Wall -Wextra -Werror -g -I$(LIBFT_INC) -I/usr/include/readline -I.
 RM          =   rm -rf
 
 # Libft
@@ -12,7 +12,7 @@ LIBFT_INC   =   $(LIBFT_DIR)
 READLINE_LIB =   -lreadline
 
 # Sources and objects
-SRC         =   main.c utilits.c builtin_cmd.c
+SRC         =   main.c utilits.c builtin/builtin_cmd.c builtin/pwd.c builtin/env.c builtin/cd.c builtin/echo.c
 OBJS        =   $(SRC:.c=.o)
 
 # Linker flags (libraries only)
@@ -32,7 +32,7 @@ clean:
 	$(MAKE) -C $(LIBFT_DIR) clean
 
 fclean: clean
-	$(RM) $(NAME)
+	$(RM) $(NAME) a.out
 	$(MAKE) -C $(LIBFT_DIR) fclean
 
 re: fclean all
