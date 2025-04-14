@@ -6,7 +6,7 @@ void execute_pwd(t_env *env)
 
     if (pwd != NULL)
     {
-        ft_printf("%s\n", pwd);
+        printf("%s\n", pwd);
     }
     else
     {

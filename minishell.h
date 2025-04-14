@@ -23,12 +23,21 @@ typedef enum e_token_type
 
 
 //tokinzer
+typedef enum e_quote_type {
+    NO_QUOTE,
+    SINGLE_QUOTE,
+    DOUBLE_QUOTE
+} t_quote_type;
+
 typedef struct s_token
 {
 	t_token_type		type;
 	char				*value;
 	struct s_token		*next;
+	t_quote_type quote;
 }	t_token;
+
+
 
 typedef struct s_env {
     char *key;
@@ -55,10 +64,13 @@ t_env *init_env(char **envp);
 void free_env_copy(char **env);
 void free_env(t_env *env);
 
-//parsing
-//t_cmd *token_list_to_cmds(t_token *tokens);
-//t_cmd *create_cmd_node(t_token *tokens);
-//char **token_list_to_args(t_token *tokens);
+//expander
+char *expand_variables(const char *input, t_env *env);
+char *expand_all(const char *input, t_env *env);
+char *handle_double_quotes(const char *input, int *i, t_env *env);
+char *handle_single_quotes(const char *input, int *i);
+char *expand_variables(const char *input, t_env *env);
+
 
 
 

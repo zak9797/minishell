@@ -55,6 +55,7 @@ char				*ft_strtrim(const char *s1, const char *set);
 char				*ft_substr(const char *s, unsigned int start, size_t len);
 int					ft_tolower(int c);
 int					ft_toupper(int c);
+char *ft_strndup(const char *s, size_t n);
 
 /* ft_printf function prototypes */
 int					ft_printf(const char *format, ...);

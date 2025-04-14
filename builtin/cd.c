@@ -8,7 +8,7 @@ char *get_env_val(t_env *env, const char *key)
             return env->value;
         env = env->next;
     }
-    return NULL;
+    return ""; // Return empty string if not found
 }
 
 void set_env_val(t_env *env, const char *key, const char *val)
@@ -70,7 +70,7 @@ void execute_cd(t_token *arg, t_env *env)
                 fprintf(stderr, "cd: OLDPWD not set\n");
                 return;
             }
-            ft_printf("%s\n", path); // mimic bash output
+            printf("%s\n", path); // mimic bash output
         }
 
         // Handle ~ and ~/folder
