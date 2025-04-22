@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 FT_PRINTF_DIR = ft_printf
 GET_NEXT_LINE_DIR = get_next_line
 
@@ -37,9 +38,10 @@ B_OBJS      = ${B_SRCS:.c=.o}
 # Final library name
 NAME        = libft.a
 
+
 # Compiler and tools
-CC          = cc
-RM          = rm -f
+CC = cc
+RM = /usr/bin/rm -f
 AR          = ar rcs
 CFLAGS      = -Wall -Wextra -Werror
 

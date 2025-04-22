@@ -1,0 +1,2 @@
+drwxr-xr-x 2 zsalah 2024_42campus   184 Apr 21 20:08 builtin
+drwxr-xr-x 2 zsalah 2024_42campus  4096 Apr 21 20:08 libft

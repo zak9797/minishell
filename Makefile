@@ -1,5 +1,6 @@
 NAME        =   minishell
-CC          =   cc
+SHELL := /bin/bash
+CC = cc
 CFLAGS = -Wall -Wextra -Werror -g -I$(LIBFT_INC) -I/usr/include/readline -I.
 RM          =   rm -rf
 
@@ -12,7 +13,7 @@ LIBFT_INC   =   $(LIBFT_DIR)
 READLINE_LIB =   -lreadline
 
 # Sources and objects
-SRC         =   main.c expander.c utilits.c builtin/builtin_cmd.c builtin/pwd.c builtin/env.c builtin/cd.c builtin/echo.c
+SRC         =   main.c external.c expander.c utilits.c redirection.c builtin/builtin_cmd.c builtin/pwd.c builtin/env.c builtin/cd.c builtin/echo.c builtin/export.c
 OBJS        =   $(SRC:.c=.o)
 
 # Linker flags (libraries only)

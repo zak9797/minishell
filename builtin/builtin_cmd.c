@@ -24,6 +24,7 @@ int check_cmd(t_token *cmd_token)
 void execute_builtin(t_token *tokens, t_env *env)
 {
     t_token *cmd_token = tokens;
+    //  handlee_redirections(tokens);
 
     if (cmd_token && check_cmd(cmd_token))  // If it's a built-in command
     {
@@ -37,7 +38,8 @@ void execute_builtin(t_token *tokens, t_env *env)
         }
         else if (ft_strcmp(cmd_token->value, "cd") == 0)
         {
-            t_token *next_token = cmd_token->next;
+            // print_tokens(cmd_token);   
+             t_token *next_token = cmd_token->next;
             execute_cd(next_token, env);  // Pass envp to update PWD
         }
         else if (ft_strcmp(cmd_token->value, "echo") == 0)
@@ -45,21 +47,11 @@ void execute_builtin(t_token *tokens, t_env *env)
             t_token *next_token = cmd_token->next;
             execute_echo(next_token, env);
         }
-    }
-}        /*else if (ft_strcmp(cmd_token->value, "cd") == 0)
+        else if(ft_strcmp(cmd_token->value, "export") == 0)
         {
-            // Get the next token (the directory path)
-            t_token *cd_token = cmd_token->next;
-            if (cd_token)
-            {
-                execute_cd(cd_token->value);  // Handle cd with the path argument
-            }
-            else
-            {
-                // Handle the case where no path is provided
-                execute_cd(NULL);  // Default to HOME if no argument is passed
-            }
-        }*/
-
-        // Continue processing other tokens after built-in commands
+            // t_token *next_token = cmd_token->next;
+            execute_export(cmd_token, env);
+        }
+    }
+}        
 

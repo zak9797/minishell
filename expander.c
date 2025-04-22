@@ -36,19 +36,24 @@ char *expand_variables(const char *input, t_env *env)
 
 char *handle_single_quotes(const char *input, int *i)
 {
-    (*i)++; // skip opening '
+    
     int start = *i;
+    (*i)++;
+    // if(input[*i]  == ' ')
+    // {
+    //     s
+    // }
     while (input[*i] && input[*i] != '\'')
         (*i)++;
     char *literal = ft_strndup(&input[start], *i - start);
     (*i)++; // skip closing '
     return literal;
 }
-int has_single_quote_inside(const char *str)
+int has_special_inside(const char *str)
 {
     while (*str)
     {
-        if (*str == '\'')
+        if (*str == '*' || *str == '~' || *str == '{' || *str == ';' || *str == '&')
             return 1;
         str++;
     }
@@ -66,16 +71,16 @@ char *handle_double_quotes(const char *input, int *i, t_env *env)
     char *inside = ft_strndup(&input[start], *i - start);
 
     char *expanded;
-    if (has_single_quote_inside(inside))
-    {
-        // ❌ Do NOT expand if there’s a single quote inside
-        expanded = strdup(inside);
-    }
-    else
-    {
-        // ✅ Safe to expand
-        expanded = expand_variables(inside, env);
-    }
+     if (has_special_inside(inside))
+     {
+         // ❌ Do NOT expand if there’s a single quote inside
+         expanded = strdup(inside);
+     }
+     else
+     {
+      expanded = expand_variables(inside, env);   
+         // ✅ Safe to expand    
+     }
 
     free(inside);
 
@@ -97,24 +102,23 @@ int has_unclosed_quotes(const char *input)
     }
     return (single % 2 != 0 || double_q % 2 != 0);
 }
-char *expand_all(const char *input, t_env *env)
+char *expand_all(char *input, t_env *env)
 {
-    if (has_unclosed_quotes(input))
-    {
+if (has_unclosed_quotes(input))
+{
     printf("Unclosed quote detected\n");
-    return EXITF;
-    }
+    return NULL;
+}
     int i = 0;
     char *result = strdup("");
 
     while (input[i])
     {
-        char *fragment = NULL;
-
-        if (input[i] == '\'')
-            fragment = handle_single_quotes(input, &i);
-        else if (input[i] == '"')
-            fragment = handle_double_quotes(input, &i, env);
+         char *fragment = NULL;
+         if (input[i] == '\'')
+             fragment = handle_single_quotes(input, &i);
+        // else if (input[i] == '"')
+        //      fragment = handle_double_quotes(input, &i, env);
         else if (input[i] == '$')
         {
             int start = i++;
@@ -138,5 +142,7 @@ char *expand_all(const char *input, t_env *env)
         free(tmp_result);
         free(fragment);
     }
+        //printf("result: %s\n", result); 
+
     return result;
 }

@@ -1,4 +1,4 @@
-#include"minishell.h"
+#include "../minishell.h"
 
 int is_n_flag(const char *str)
 {
@@ -15,15 +15,17 @@ int is_n_flag(const char *str)
 void execute_echo(t_token *arg, t_env *env)
 {
     int newline = 1;
-
     (void)env;
 
-    // Handle multiple -n flags
     while (arg && is_n_flag(arg->value))
     {
         newline = 0;
         arg = arg->next;
     }
+
+    // Clean redirection tokens from the list
+   // arg = handle_redirections(arg);
+
     while (arg)
     {
         printf("%s", arg->value);

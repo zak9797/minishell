@@ -1,4 +1,4 @@
-#include"minishell.h"
+#include "../minishell.h"
 
 char *get_env_val(t_env *env, const char *key)
 {
@@ -54,13 +54,14 @@ void update_pwd_env(t_env *env, char *oldpwd)
 
 void execute_cd(t_token *arg, t_env *env)
 {
-    char *path = NULL;
+    int i;
+    char *path;
     char *to_free = NULL;
 
+    i = 0;
     if (arg && arg->value)
     {
         path = arg->value;
-
         // Handle cd -
         if (strcmp(path, "-") == 0)
         {
@@ -74,7 +75,7 @@ void execute_cd(t_token *arg, t_env *env)
         }
 
         // Handle ~ and ~/folder
-        else if (path[0] == '~')
+        else if (path[0] == '~' || ft_strlen(path) == 0)
         {
             char *home = get_env_val(env, "HOME");
             if (!home)
@@ -90,6 +91,7 @@ void execute_cd(t_token *arg, t_env *env)
             sprintf(to_free, "%s%s", home, path + 1); // skip the '~'
             path = to_free;
         }
+
     }
     else
     {
@@ -97,10 +99,11 @@ void execute_cd(t_token *arg, t_env *env)
         path = get_env_val(env, "HOME");
         if (!path)
         {
-            fprintf(stderr, "cd: HOME not set\n");
+            // fprintf(stderr, "cd: HOME not set\n");
             return;
         }
     }
+
 
     // Save old PWD
     char *oldpwd = getcwd(NULL, 0);
@@ -122,6 +125,7 @@ void execute_cd(t_token *arg, t_env *env)
 
     // Update PWD and OLDPWD
     update_pwd_env(env, oldpwd);
+     print_tokens(arg);
 
     free(oldpwd);
     if (to_free) free(to_free);

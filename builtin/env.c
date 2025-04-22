@@ -81,7 +81,6 @@ t_env *init_env(char **envp)
 
         current = new_node;
     }
-
     return head;
 }
 void free_env(t_env *env)

@@ -1,4 +1,4 @@
-#include"minishell.h"
+#include "../minishell.h"
 
 void execute_pwd(t_env *env)
 {
