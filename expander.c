@@ -115,11 +115,11 @@ if (has_unclosed_quotes(input))
     while (input[i])
     {
          char *fragment = NULL;
-         if (input[i] == '\'')
-             fragment = handle_single_quotes(input, &i);
+        //  if (input[i] == '\'')
+        //      fragment = handle_single_quotes(input, &i);
         // else if (input[i] == '"')
         //      fragment = handle_double_quotes(input, &i, env);
-        else if (input[i] == '$')
+         if (input[i] == '$')
         {
             int start = i++;
             while (input[i] && (ft_isalnum(input[i]) || input[i] == '_'))

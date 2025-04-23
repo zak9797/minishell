@@ -221,15 +221,13 @@ void execute_simple(char **arg, t_env *env)
     char **args;
     char **cmd;
 	int redir_fd = redirect_for_builtin(tokens);
-
-	t_token *cleaned = clean_command_tokens(tokens);
+	 t_token *cleaned = clean_command_tokens(tokens);
+	// print_tokens(cleaned);
 if (check_cmd(tokens))
 {
 
 	execute_builtin(cleaned, env);
-
 	restore_stdio(redir_fd);
-	return;
 }
 else {
     id = fork();
@@ -243,7 +241,7 @@ else {
     else if (id == 0)
 	{
 		printf("here\n");
-		cmd = command_matrix(cleaned);	  
+		 cmd = command_matrix(cleaned);	  
         args = check_cmd_path(cmd, env);
 		// if (!args || !args[0]) {
 		// 	fprintf(stderr, "command not found\n");
@@ -346,20 +344,17 @@ void execute_complex(char **args, t_env *env)
 		if (pid == 0)
 		{
 			handle_redirections(token, env);
-			// t_token *cleaned = clean_command_tokens(token);
 			if (prev_fd != -1)
 			{
 				dup2(prev_fd, STDIN_FILENO);
 				close(prev_fd);
 			}
-			// Set output to the pipe if there's a next command
 			if (args[i + 1] != NULL)
 			{
 				dup2(pipefd[1], STDOUT_FILENO);
 				close(pipefd[0]);
 				close(pipefd[1]);
 			}
-			
 			if (check_cmd(token) && !args[1])
 			{
 				execute_builtin(token, env);
@@ -394,14 +389,10 @@ void execute_complex(char **args, t_env *env)
 			perror("fork");
 			exit(EXIT_FAILURE);
 		}
-	
 		i++;
+	}
 		for (int j = 0; j < num_cmds; j++)
 		waitpid(pids[j], NULL, 0);
-	}
 
     // Wait for all children
-	//  
-    // for (int j = 0; j < num_cmds; j++)
-    //      waitpid(pids[j], NULL, 0);
-} 
+}

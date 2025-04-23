@@ -90,12 +90,12 @@ void execute_simple(char **arg, t_env *env);
 void execute_complex(char **args, t_env *env);
 char **env_list_to_array(t_env *env);
 // redirection
-t_token *handle_redirections(t_token *tokens , t_env *env);
+void redirect(t_token *tokens, int *stdin_redirected, int *stdout_redirected);
+int handle_redirections(t_token *tokens, t_env *env);
 int	redirect_for_builtin(t_token *tokens);
 void	restore_stdio(int packed_fd);
 t_token *clean_command_tokens(t_token *tokens);
-// char **handle_redirectionss(char **args, t_env *env);
-
+// char **handle_redirectionss(char **args, t_env *env, int *saved_stdin, int *saved_stdout);
 
 
 
@@ -107,6 +107,22 @@ char	*check_cmd_exist(char **cmd, char *path_env);
 char	*free_norm(char **ptr, char *ret);
 void	ft_free(char **matrix);
 char	*free_norm(char **ptr, char *ret);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

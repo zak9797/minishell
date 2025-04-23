@@ -8,10 +8,12 @@ void restore_std_fds(int stdin_backup, int stdout_backup)
     close(stdout_backup);
 }
 
-t_token *handle_redirections(t_token *tokens , t_env *env)
+int handle_redirections(t_token *tokens, t_env *env)
 {
     t_token *curr = tokens;
     t_token *prev = NULL;
+    int redirection_fd = -1; // -1 means no redirection to STDOUT
+
     while (curr)
     {
         // Check if the token is a redirection and NOT inside quotes
@@ -19,46 +21,45 @@ t_token *handle_redirections(t_token *tokens , t_env *env)
              curr->type == T_INPUT_REDIRECT || curr->type == T_HEREDOC) &&
             curr->next)
         {
-            // printf("tokens %u\n", curr->type);
             // Apply the redirection
             if (curr->type == T_OUTPUT_REDIRECT)
             {
                 char *file = curr->next->value;
-                int fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-                if (fd < 0) { perror("open output"); exit(EXIT_FAILURE); }
-                dup2(fd, STDOUT_FILENO);
-                close(fd);
+                redirection_fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (redirection_fd < 0) { perror("open output"); exit(EXIT_FAILURE); }
+                dup2(redirection_fd, STDOUT_FILENO);
+                close(redirection_fd);
             }
             else if (curr->type == T_APPEND_OUTPUT)
             {
                 char *file = curr->next->value;
-                int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
-                if (fd < 0) { perror("open append"); exit(EXIT_FAILURE); }
-                dup2(fd, STDOUT_FILENO);
-                close(fd);
+                redirection_fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
+                if (redirection_fd < 0) { perror("open append"); exit(EXIT_FAILURE); }
+                dup2(redirection_fd, STDOUT_FILENO);
+                close(redirection_fd);
             }
             else if (curr->type == T_INPUT_REDIRECT)
             {
                 char *file = curr->next->value;
-                int fd = open(file, O_RDONLY);
-                if (fd < 0) { perror("open input"); exit(EXIT_FAILURE); }
-                dup2(fd, STDIN_FILENO);
-                close(fd);
+                redirection_fd = open(file, O_RDONLY);
+                if (redirection_fd < 0) { perror("open input"); exit(EXIT_FAILURE); }
+                dup2(redirection_fd, STDIN_FILENO);
+                close(redirection_fd);
             }
             else if (curr->type == T_HEREDOC)
             {
-				char *last_heredoc_delim = NULL;
-				t_token *tmp = curr;
-				while (tmp)
-				{
-					if (tmp->type == T_HEREDOC && tmp->next)
-					{
-						last_heredoc_delim = tmp->next->value;
-					}
-						tmp = tmp->next;
-				}
+                char *last_heredoc_delim = NULL;
+                t_token *tmp = curr;
+                while (tmp)
+                {
+                    if (tmp->type == T_HEREDOC && tmp->next)
+                    {
+                        last_heredoc_delim = tmp->next->value;
+                    }
+                    tmp = tmp->next;
+                }
 
-				char *file = curr->next->value;
+                char *file = curr->next->value;
                 int pipefd[2];
                 if (pipe(pipefd) == -1) {
                     perror("pipe");
@@ -78,14 +79,12 @@ t_token *handle_redirections(t_token *tokens , t_env *env)
                     close(pipefd[1]);
                     exit(0);
                 } else 
-				{
+                {
                     wait(NULL);
                     close(pipefd[1]);
-					if (strcmp(file, last_heredoc_delim) == 0)
-					dup2(pipefd[0], STDIN_FILENO);
-                    //  dup2(pipefd[0], STDIN_FILENO);
+                    if (strcmp(file, last_heredoc_delim) == 0)
+                        dup2(pipefd[0], STDIN_FILENO);
                     close(pipefd[0]);
-					
                 }
             }
 
@@ -108,7 +107,7 @@ t_token *handle_redirections(t_token *tokens , t_env *env)
             curr = curr->next;
         }
     }
-    return tokens;
+    return redirection_fd;
 }
 int	redirect_for_builtin(t_token *tokens)
 {
@@ -255,9 +254,18 @@ t_token *clean_command_tokens(t_token *tokens)
 	return tokens;
 }
 
-char **handle_redirectionss(char **args, t_env *env)
+
+char **handle_redirectionss(char **args, t_env *env, int *saved_stdin, int *saved_stdout)
 {
     int i = 0;
+
+    *saved_stdin = dup(STDIN_FILENO);  // Save the current stdin
+    *saved_stdout = dup(STDOUT_FILENO); // Save the current stdout
+
+    if (*saved_stdin == -1 || *saved_stdout == -1) {
+        perror("dup");
+        exit(EXIT_FAILURE);
+    }
 
     while (args[i])
     {
@@ -272,21 +280,21 @@ char **handle_redirectionss(char **args, t_env *env)
             {
                 int fd = open(target, O_WRONLY | O_CREAT | O_TRUNC, 0644);
                 if (fd < 0) { perror("open >"); exit(EXIT_FAILURE); }
-                dup2(fd, STDOUT_FILENO);
+                dup2(fd, STDOUT_FILENO); // Redirect stdout
                 close(fd);
             }
             else if (strcmp(op, ">>") == 0)
             {
                 int fd = open(target, O_WRONLY | O_CREAT | O_APPEND, 0644);
                 if (fd < 0) { perror("open >>"); exit(EXIT_FAILURE); }
-                dup2(fd, STDOUT_FILENO);
+                dup2(fd, STDOUT_FILENO); // Redirect stdout
                 close(fd);
             }
             else if (strcmp(op, "<") == 0)
             {
                 int fd = open(target, O_RDONLY);
                 if (fd < 0) { perror("open <"); exit(EXIT_FAILURE); }
-                dup2(fd, STDIN_FILENO);
+                dup2(fd, STDIN_FILENO); // Redirect stdin
                 close(fd);
             }
             else if (strcmp(op, "<<") == 0)
@@ -314,22 +322,12 @@ char **handle_redirectionss(char **args, t_env *env)
                 {
                     wait(NULL);
                     close(pipefd[1]);
-                    dup2(pipefd[0], STDIN_FILENO);
+                    dup2(pipefd[0], STDIN_FILENO); // Redirect stdin from pipe
                     close(pipefd[0]);
                 }
             }
-
             // Shift arguments left to remove op and target
-            int j = i;
-            while (args[j + 2])
-            {
-                args[j] = args[j + 2];
-                j++;
-            }
-            args[j] = NULL;
-
-            // stay at same index to check new value at args[i]
-            continue;
+            i++; // Skip the next argument since it's the target of the redirection
         }
         i++;
     }
