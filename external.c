@@ -261,34 +261,6 @@ else {
 }
 }
 
-// void	exceute_cmd_in(char **argv, char **envp, int *pipe_fd)
-// {
-// 	int		fd;
-// 	pid_t	id;
-// 	char	**args;
-// 	char	**cmd;
-
-// 	args = NULL;
-// 	id = fork();
-// 	if (id == -1)
-// 		exit_program(NULL, pipe_fd[0], pipe_fd[1]);
-// 	else if (id == 0)
-// 	{
-// 		close(pipe_fd[0]);
-// 		dupfd(pipe_fd[1], STDOUT_FILENO);
-// 		fd = open(argv[1], O_RDONLY);
-// 		if (fd == -1)
-// 			error_norm(argv[1]);
-// 		dupfd(fd, STDIN_FILENO);
-// 		cmd = command_matrix(argv[2]);
-// 		args = check_cmd_path(cmd, envp);
-// 		//if (!args)
-// 			//exit_program_wo_e(cmd, -1, -1);
-// 		execve(args[0], cmd, NULL);
-// 		exit_program(args, -1, -1);
-// 	}
-
-// }
 char **env_list_to_array(t_env *env)
 {
 	int		i = 0;
@@ -321,78 +293,82 @@ char **env_list_to_array(t_env *env)
 	return (envp);
 }
 
-
 void execute_complex(char **args, t_env *env)
 {
-    int i= 0;
+    int i = 0;
     int prev_fd = -1;
     pid_t pids[256]; // store pids to wait later
     pid_t pid;
-     int num_cmds = 0;
-	i = 0;
-	while (args[i])
-	{
-		// int redir_fd =0;
-		t_token *token = tokenizee_input(args[i]);
-		int pipefd[2];
-		if (args[i + 1] != NULL && pipe(pipefd) == -1)
-		{
-			perror("pipe");
-			exit(EXIT_FAILURE);
-		}
-		pid = fork();
-		if (pid == 0)
-		{
-			handle_redirections(token, env);
-			if (prev_fd != -1)
-			{
-				dup2(prev_fd, STDIN_FILENO);
-				close(prev_fd);
-			}
-			if (args[i + 1] != NULL)
-			{
-				dup2(pipefd[1], STDOUT_FILENO);
-				close(pipefd[0]);
-				close(pipefd[1]);
-			}
-			if (check_cmd(token) && !args[1])
-			{
-				execute_builtin(token, env);
-				exit(0);
-			}
-			else
-			{
-				char **cmd = command_matrix(clean_command_tokens(token));
-				char **exec_path = check_cmd_path(cmd, env);
-				char **arr = env_list_to_array(env);
-				execve(exec_path[0], cmd, arr);
-				perror("execve");
-				exit(EXIT_FAILURE);
-			}
-		}
-		else if (pid > 0)
-		{
-			// restore_stdio(redir_fd);
-			// int status;
-			// waitpid(pid, &status, 0); 
-			pids[num_cmds++] = pid;
-			if (prev_fd != -1) close(prev_fd);
-	
-			if (args[i + 1] != NULL)
-			{
-				close(pipefd[1]);
-				prev_fd = pipefd[0]; // for next child
-			}
-		}
-		else
-		{
-			perror("fork");
-			exit(EXIT_FAILURE);
-		}
-		i++;
-	}
-		for (int j = 0; j < num_cmds; j++)
-		waitpid(pids[j], NULL, 0);
+    int num_cmds = 0;
+	process_heredocs(args);
+    while (args[i])
+    {
+        t_token *token = tokenizee_input(args[i]);
+        int pipefd[2];
+        if (args[i + 1] != NULL && pipe(pipefd) == -1)
+        {
+            perror("pipe");
+            exit(EXIT_FAILURE);
+        }
 
-    // Wait for all children
+        pid = fork();
+        if (pid == 0)
+        {
+			if (prev_fd != -1)
+            {
+                dup2(prev_fd, STDIN_FILENO);
+                close(prev_fd);
+            }
+
+            if (args[i + 1] != NULL)
+            {
+                dup2(pipefd[1], STDOUT_FILENO);
+                close(pipefd[0]);
+                close(pipefd[1]);
+            }
+			int heredoc_fd = open(".heredoc_tmp", O_RDONLY);
+			if (heredoc_fd != -1)
+			{
+				dup2(heredoc_fd, STDIN_FILENO);
+				close(heredoc_fd);
+			}
+            handle_redirections(token, env);
+            if (check_cmd(token) && !args[1])
+            {
+                execute_builtin(token, env);
+                exit(0);
+            }
+            else
+            {
+                char **cmd = command_matrix(clean_command_tokens(token));
+                char **exec_path = check_cmd_path(cmd, env);
+                char **arr = env_list_to_array(env);
+                execve(exec_path[0], cmd, arr);
+                // perror("execve");
+                exit(EXIT_FAILURE);
+            }
+        }
+        else if (pid > 0)
+        {
+            pids[num_cmds++] = pid;
+             if (prev_fd != -1) close(prev_fd);
+
+            if (args[i + 1] != NULL)
+            {
+                close(pipefd[1]);
+                prev_fd = pipefd[0]; // for next child
+            }
+        }
+        else
+        {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        }
+
+        i++;
+    }
+
+	for (int j = 0; j < num_cmds; j++)
+	waitpid(pids[j], NULL, 0); 
+	unlink(".heredoc_tmp");
 }

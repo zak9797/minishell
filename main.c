@@ -267,6 +267,14 @@ t_token *tokenizee_input(char *input)
     // printf("out\n");
     return tokens;
 }
+void free_split(char **arr)
+{
+    if (!arr)
+        return;
+    for (int i = 0; arr[i]; i++)
+        free(arr[i]);
+    free(arr);
+}
 
 int main(int argc, char **argv, char **envp)
 {
@@ -280,27 +288,38 @@ int main(int argc, char **argv, char **envp)
     while (1)
     {
         input = readline("minishell$ ");
-        // t_token *token = tokenizee_input(input);
         if (!input)
             break;
-        add_history(input);
-        char *expanding=expand_all(input, env);
-        if (!expanding)
+        if (input[0] == '\0') // If user pressed only Enter
         {
-
+            free(input);
             continue;
         }
+        add_history(input);
+
+        char *expanding = expand_all(input, env);
+        free(input); // free input after expanding
+
+        if (!expanding) // very important
+            continue;
+
         args = ft_split(expanding, '|');
-        if (args[1] == NULL)
+        free(expanding); // free expanded input after split
+
+        if (!args || !args[0]) // safety check
         {
-            execute_simple(args, env);
+            free_split(args); // custom function to free char **
+            continue;
         }
-         else 
+
+        if (args[1] == NULL)
+            execute_simple(args, env);
+        else
         {
-            // handle_redirections(token, env);
             execute_complex(args, env);
         }
-        free(args);   
+        
+        free_split(args); // custom function to free char **
     }
     return 0;
 }

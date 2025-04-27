@@ -37,7 +37,9 @@ typedef struct s_token
 	char				*value;
 	struct s_token		*next;
 	t_quote_type quote;
+	int heredoc_fd;
 }	t_token;
+
 
 
 
@@ -95,6 +97,7 @@ int handle_redirections(t_token *tokens, t_env *env);
 int	redirect_for_builtin(t_token *tokens);
 void	restore_stdio(int packed_fd);
 t_token *clean_command_tokens(t_token *tokens);
+void process_heredocs(char **args);
 // char **handle_redirectionss(char **args, t_env *env, int *saved_stdin, int *saved_stdout);
 
 

@@ -1,7 +1,7 @@
 NAME        =   minishell
 SHELL := /bin/bash
 CC = cc
-CFLAGS = -Wall -Wextra -Werror -g -I$(LIBFT_INC) -I/usr/include/readline -I.
+CFLAGS = -Wall -Wextra -Werror -g3 -I$(LIBFT_INC) -I/usr/include/readline -I.
 RM          =   rm -rf
 
 # Libft
