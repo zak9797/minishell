@@ -1,325 +1,115 @@
 #include "minishell.h"
 
-// Function to create a new token
+t_shell_state g_shell = {
+    .last_exit_status = 0,
+    .signal_flag = 0
+};
 
- t_token_type get_token_type(char *input, int i)
+// Check if a signal was caught (Ctrl+C)
+int check_signal(t_token *token)
 {
-    if (input[i] == '|')
-        return T_PIPE;
-    else if (input[i] == '<' && input[i + 1] == '<')
-        return T_HEREDOC;  // '<<'
-    else if (input[i] == '>' && input[i + 1] == '>')
-        return T_APPEND_OUTPUT;  // '>>'
-    else if (input[i] == '>')
-        return T_OUTPUT_REDIRECT;  // '>'
-    else if (input[i] == '<')
-        return T_INPUT_REDIRECT;   // '<'
-    return T_WORD;
+    if (g_shell.signal_flag)
+    {
+        // This handles Ctrl+C before command execution
+        g_shell.signal_flag = 0;
+        g_shell.last_exit_status = 130;
+        if (token)
+            token->exit_status = 130;
+        return 1;
+    }
+    return 0;
 }
 
- t_token *create_token(t_token_type type, char *value)
+// Main function to handle the shell
+void	handle_signal_flag(void)
 {
-	t_token *new = malloc(sizeof(t_token));
-	if (!new)
-		return NULL;
-	new->type = type;
-	new->value = strdup(value);
-	//new->quote = quote_type;
-	new->next = NULL;
-	return new;
-}
-
- void	add_token(t_token **head, t_token *new)
-{
-	if (!*head)
-		*head = new;
-	else
+	if (g_shell.signal_flag)
 	{
-		t_token *temp = *head;
-		while (temp->next)
-			temp = temp->next;
-		temp->next = new;
+		g_shell.signal_flag = 0;
+		g_shell.last_exit_status = 130;
 	}
 }
 
-t_token *tokenize_input(char *input)
+char	**read_and_expand_input(t_env *env)
 {
-	t_token *tokens = NULL;
-	int i = 0;
-    //tokens->value = NULL;
-    //tokens->next = NULL;
-    //tokens->quote = NULL;
-    //tokens->type = NULL; 
-    // Skip spaces only if NOT inside quotes
-    if (isspace(input[i]))
-    {
-        i++;
-    }
-		if ((input[i] == '>' && input[i + 1] == '>') || (input[i] == '<' && input[i + 1] == '<'))
+	char	*input = readline("minishell$ ");
+	char	*expanding;
+	char	**args;
+
+	if (!input)
+		return (NULL);
+	if (input[0] == '\0')
+	{
+		free(input);
+		return ((char **)1); // Return dummy non-null pointer to skip
+	}
+	add_history(input);
+	expanding = expand_all(input, env);
+	free(input);
+	if (!expanding)
+		return ((char **)1);
+	args = ft_split(expanding, '|');
+	free(expanding);
+	return (args);
+}
+
+void	execution_loop(t_env *env)
+{
+	int i;
+	char	**args;
+
+	
+	while (1)
+	{
+		i= 0;
+		handle_signal_flag();
+		args = read_and_expand_input(env);
+		if (args == NULL)
+			break;
+		if (args == (char **)1 || !args || !args[0])
 		{
-			char symbol[3] = { input[i], input[i + 1], '\0' };
-			add_token(&tokens, create_token(get_token_type(input, i), symbol));
-			i += 2;  // Skip the next character as it's part of the operator
+			if (args != (char **)1)
+				free_split(args);
+			continue;
 		}
-		else if (input[i] == '>' || input[i] == '<' || input[i] == '|')
+		if (args[1] == NULL)
+			execute_simple(args, env);
+		else
+			execute_complex(args, env);
+
+			
+		while(args[i])
 		{
-			char symbol[2] = { input[i], '\0' };
-			add_token(&tokens, create_token(get_token_type(input, i), symbol));
+			t_token *tokens = tokenize_input(args[i]);
+			freee_tokens(tokens);
 			i++;
 		}
-		else
-		{
-			int start = i;
-			while (input[i] && input[i] != '|' && input[i] != '<' && input[i] != '>')
-				i++;
-			char *word = strndup(&input[start], i - start);
-			add_token(&tokens, create_token(T_WORD, word));
-			free(word);
-		}
-	
-	return tokens;
+		free_split(args);
+	}
 }
-
-void print_tokens(t_token *head)
+void free_env_list(t_env *env)
 {
-    int expect_command = 1; // At start, expect a command
+    t_env *tmp;
 
-    while (head)
+    while (env)
     {
-        const char *type_str;
-
-        switch (head->type)
-        {
-            case T_PIPE:
-                type_str = "PIPE";
-                expect_command = 1; // After a pipe, expect a new command
-                break;
-            case T_OUTPUT_REDIRECT:
-                type_str = "OUTPUT REDIRECT";
-                break;
-            case T_APPEND_OUTPUT:
-                type_str = "APPEND OUTPUT";
-                break;
-            case T_INPUT_REDIRECT:
-                type_str = "INPUT REDIRECT";
-                break;
-            case T_HEREDOC:
-                type_str = "HEREDOC";
-                break;
-            case T_WORD:
-                if (expect_command)
-                {
-                    if (check_cmd(head))
-                        type_str = "BUILT-IN COMMAND";
-                    else
-                        type_str = "COMMAND";
-                    expect_command = 0;
-                }
-                else
-                {
-                    type_str = "ARG";
-                }
-                break;
-            default:
-                type_str = "UNKNOWN";
-        }
-
-        printf("Type: %-18s | Value: '%s'\n", type_str, head->value);
-        head = head->next;
-    }
-}
-char *replace_escapes(const char *input)
-{
-    char *result = malloc(strlen(input) + 1); // safe size for now
-    int j = 0;
-    for (int i = 0; input[i]; i++)
-    {
-        if (input[i] == '\\' && input[i + 1])
-        {
-            i++;
-            if (input[i] == 'n') result[j++] = '\n';
-            else if (input[i] == 't') result[j++] = '\t';
-            else if (input[i] == ' ') result[j++] = ' ';
-            else result[j++] = input[i]; // just copy e.g. '\\'
-        }
-        else
-        {
-            result[j++] = input[i];
-        }
-    }
-    result[j] = '\0';
-    return result;
-}
-
-int skip_quots(char *str, int i)
-{
-    char    c;
-
-    if (str[i] == '"' || str[i] == '\'')
-        c = str[i];
-    else
-        return (i);
-    i++;
-    while (str[i] != c)
-        i++;
-    return (i);
-}
-
-void    remove_char(char **str, int i)
-{
-    while((*str)[i + 1])
-    {
-        (*str)[i] = (*str)[i + 1];
-        i++;
-    }
-    (*str)[i] = '\0';
-}
-
-void    remove_quots(char **str)
-{
-    int     i;
-    char    c;
-
-    i = 0;
-    while ((*str)[i])
-    {
-        if ((*str)[i] == '"' || (*str)[i] == '\'')
-        {
-            c = (*str)[i];
-            remove_char(str, i);
-            while ((*str)[i] != c)
-                i++;
-            remove_char(str, i);
-        }
-        i++;
+        tmp = env->next;
+        free(env->key);
+        free(env->value);
+        free(env);
+        env = tmp;
     }
 }
 
-t_token *tokenizee_input(char *input)
+int	main(int argc, char **argv, char **envp)
 {
-    t_token *tokens = NULL;
-    int i = 0;
+	t_env *env;
 
-    while (input[i])
-    {
-        // Skip whitespace
-        if (isspace(input[i]))
-        {
-            i++;
-        }
-        // Handle single or double quoted strings
-        if (input[i] == '\'' || input[i] == '"')
-        {
-            char quote = input[i++];
-            int start = i;
+	(void)argc;
+	(void)argv;
+	env = init_env(envp);
+	execution_loop(env);
+	free_env_list(env);
 
-            while (input[i] && input[i] != quote)
-                i++;
-
-            char *quoted = ft_strndup(&input[start], i - start);
-            add_token(&tokens, create_token(T_WORD, quoted));
-            free(quoted);
-
-            if (input[i] == quote)
-                i++; // skip the closing quote
-
-            continue;
-        }
-
-        // Handle >> or <<
-        if ((input[i] == '>' && input[i + 1] == '>') || (input[i] == '<' && input[i + 1] == '<'))
-        {
-            char symbol[3] = { input[i], input[i + 1], '\0' };
-            add_token(&tokens, create_token(get_token_type(input, i), symbol));
-            i += 2;
-            continue;
-        }
-
-        // Handle > < |
-        if (input[i] == '>' || input[i] == '<' || input[i] == '|')
-        {
-            char symbol[2] = { input[i], '\0' };
-            add_token(&tokens, create_token(get_token_type(input, i), symbol));
-            i++;
-            continue;
-        }
-
-        // Handle normal unquoted words
-        int start = i;
-        while (input[i] &&
-               !isspace(input[i]) &&
-               input[i] != '|' &&
-               input[i] != '<' &&
-               input[i] != '>' &&
-               input[i] != '"' &&
-               input[i] != '\'')
-        {
-            // i = skip_quots(input, i);
-            i++;
-        }
-        // printf("hello %d\n", i);
-        char *word = ft_strndup(&input[start], i - start);
-        // remove_quots(&word);
-        // printf("hello %d\n", i);
-        add_token(&tokens, create_token(T_WORD, word));
-        free(word);
-    }
-    // printf("out\n");
-    return tokens;
-}
-void free_split(char **arr)
-{
-    if (!arr)
-        return;
-    for (int i = 0; arr[i]; i++)
-        free(arr[i]);
-    free(arr);
-}
-
-int main(int argc, char **argv, char **envp)
-{
-    t_env *env;
-    (void)argc;
-    (void)argv;
-    char *input;
-    char **args;
-
-    env = init_env(envp);
-    while (1)
-    {
-        input = readline("minishell$ ");
-        if (!input)
-            break;
-        if (input[0] == '\0') // If user pressed only Enter
-        {
-            free(input);
-            continue;
-        }
-        add_history(input);
-
-        char *expanding = expand_all(input, env);
-        free(input); // free input after expanding
-
-        if (!expanding) // very important
-            continue;
-
-        args = ft_split(expanding, '|');
-        free(expanding); // free expanded input after split
-
-        if (!args || !args[0]) // safety check
-        {
-            free_split(args); // custom function to free char **
-            continue;
-        }
-
-        if (args[1] == NULL)
-            execute_simple(args, env);
-        else
-        {
-            execute_complex(args, env);
-        }
-        
-        free_split(args); // custom function to free char **
-    }
-    return 0;
+	return (0);
 }

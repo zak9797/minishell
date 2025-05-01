@@ -1,65 +1,81 @@
-#include "../minishell.h"
+#include "minishell.h"
 
-
-char *strip_quotes(const char *val)
+char	*strip_quotes(const char *val)
 {
-    size_t len = ft_strlen(val);
-    if (len >= 2 && ((val[0] == '"' && val[len - 1] == '"') ||
-                     (val[0] == '\'' && val[len - 1] == '\'')))
-    {
-        return ft_strndup(val + 1, len - 2);
-    }
-    return ft_strdup(val);
+	size_t	len;
+
+	if (!val)
+		return (NULL);
+	len = ft_strlen(val);
+	if (len >= 2 && ((val[0] == '"' && val[len - 1] == '"')
+			|| (val[0] == '\'' && val[len - 1] == '\'')))
+		return (ft_strndup(val + 1, len - 2));
+	return (ft_strdup(val));
 }
 
-
-void execute_export(t_token *token, t_env *env)
+int	is_valid_export_arg(char *arg)
 {
-    if (!token)
-    {
-        // No args: print all exported env vars
-        t_env *curr = env;
-        while (curr)
-        {
-        if (curr->value)
-            printf("declare -x %s=\"%s\"", curr->key, curr->value);
-        else
-        printf("declare -x %s", curr->key);
-        }
-        return;
-    }
-    print_tokens(token);
-    while (token)
-    {
-        char *arg = token->value;
-        char *equal_sign = strchr(arg, '=');
+	int	i;
 
-        if (equal_sign)
-        {
-            *equal_sign = '\0';
-            char *key = arg;
-            char *value = equal_sign + 1;
-        
-            // Strip quotes first
-            char *cleaned = strip_quotes(value);
-        
-            // Expand cleaned value
-            char *expanded = expand_all(cleaned, env);
-            free(cleaned);
-        
-            // Set in environment
-            set_env_val(env, key, expanded);
-            free(expanded);
-        
-            *equal_sign = '=';
-        }
-    else
-    {
-            // No value: make sure it's in env with empty value if not set
-        if (strcmp(arg, "") != 0 && !*get_env_val(env, arg))
-                set_env_val(env, arg, "");
-    }
+	if (!arg || (!ft_isalpha(arg[0]) && arg[0] != '_'))
+		return (0);
+	i = 0;
+	while (arg[i] && arg[i] != '=')
+	{
+		if (!ft_isalnum(arg[i]) && arg[i] != '_')
+			return (0);
+		i++;
+	}
+	return (1);
+}
 
-         token = token->next;
-    }
+void	print_export_env(t_env *env)
+{
+	while (env)
+	{
+		if (env->value)
+			printf("declare -x %s=\"%s\"\n", env->key, env->value);
+		else
+			printf("declare -x %s\n", env->key);
+		env = env->next;
+	}
+}
+void	handle_assign(char *arg, t_env *env)
+{
+	char	*equal;
+	char	*key;
+	char	*value;
+	char	*expanded;
+
+	equal = ft_strchr(arg, '=');
+	if (!equal)
+		return ;
+	*equal = '\0';
+	key = arg;
+	if (!key || !*key)
+		return ((void)(*equal = '='));
+	value = equal + 1;
+	expanded = expand_all(value, env);
+	if (!expanded)
+		return ((void)(*equal = '='));
+	set_env_val(env, key, expanded);
+	free(expanded);
+	*equal = '=';
+}
+
+void	execute_export(t_token *token, t_env *env)
+{
+	char	*arg;
+
+	if (!token)
+		return (print_export_env(env));
+	while (token)
+	{
+		arg = token->value;
+		if (ft_strchr(arg, '='))
+			handle_assign(arg, env);
+		else if (*arg && !get_env_val(env, arg))
+			set_env_val(env, arg, "");
+		token = token->next;
+	}
 }

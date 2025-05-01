@@ -1,57 +1,51 @@
 #include "../minishell.h"
 
-int check_cmd(t_token *cmd_token)
+int	is_builtin(const char *cmd)
 {
-    // List of built-in commands
-    char *builtins[] = {"echo", "cd", "pwd", "export", "unset", "env", "exit"};
-    int i = 0;
+	char	*builtins[] = {
+		"echo", "cd", "pwd", "export", "unset", "env", "exit"
+	};
+	int		i;
 
-    // Check if the token is a command and compare it to the built-ins
-    if (cmd_token && cmd_token->type == T_WORD)
-    {
-        for (i = 0; i < 7; i++)
-        {
-            if (ft_strcmp(cmd_token->value, builtins[i]) == 0)
-            {
-                return 1; // It's a built-in command
-            }
-        }
-    }
-
-    return 0; // It's not a built-in command
+	i = 0;
+	while (i < 7)
+	{
+		if (ft_strcmp(cmd, builtins[i]) == 0)
+			return (1);
+		i++;
+	}
+	return (0);
 }
 
-void execute_builtin(t_token *tokens, t_env *env)
+int	check_cmd(t_token *cmd_token)
 {
-    t_token *cmd_token = tokens;
-    //  handlee_redirections(tokens);
+	if (!cmd_token || cmd_token->type != T_WORD || !cmd_token->value)
+		return (0);
+	return (is_builtin(cmd_token->value));
+}
 
-    if (cmd_token && check_cmd(cmd_token))  // If it's a built-in command
-    {
-        if (ft_strcmp(cmd_token->value, "pwd") == 0)
-        {
-            execute_pwd(env);  // Use the environment copy here
-        }
-        else if (ft_strcmp(cmd_token->value, "env") == 0)
-        {
-            execute_env(env);
-        }
-        else if (ft_strcmp(cmd_token->value, "cd") == 0)
-        {
-            // print_tokens(cmd_token);   
-             t_token *next_token = cmd_token->next;
-            execute_cd(next_token, env);  // Pass envp to update PWD
-        }
-        else if (ft_strcmp(cmd_token->value, "echo") == 0)
-        {
-            t_token *next_token = cmd_token->next;
-            execute_echo(next_token, env);
-        }
-        else if(ft_strcmp(cmd_token->value, "export") == 0)
-        {
-            // t_token *next_token = cmd_token->next;
-            execute_export(cmd_token, env);
-        }
-    }
-}        
+void	dispatch_builtin(t_token *cmd_token, t_env *env)
+{
+	t_token	*next;
 
+	next = cmd_token->next;
+	if (ft_strcmp(cmd_token->value, "pwd") == 0)
+		execute_pwd(env);
+	else if (ft_strcmp(cmd_token->value, "env") == 0)
+		execute_env(env);
+	else if (ft_strcmp(cmd_token->value, "cd") == 0)
+		execute_cd(next, env);
+	else if (ft_strcmp(cmd_token->value, "echo") == 0)
+		execute_echo(next, env);
+	else if (ft_strcmp(cmd_token->value, "export") == 0)
+		execute_export(next, env);
+	else if (ft_strcmp(cmd_token->value, "unset") == 0)
+		unset_env_var(env, next);
+}
+
+void	execute_builtin(t_token *tokens, t_env *env)
+{
+	if (!tokens || !check_cmd(tokens))
+		return ;
+	dispatch_builtin(tokens, env);
+}

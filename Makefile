@@ -13,7 +13,7 @@ LIBFT_INC   =   $(LIBFT_DIR)
 READLINE_LIB =   -lreadline
 
 # Sources and objects
-SRC         =   main.c external.c expander.c utilits.c redirection.c builtin/builtin_cmd.c builtin/pwd.c builtin/env.c builtin/cd.c builtin/echo.c builtin/export.c
+SRC         =   main.c redirections/r1.c redirections/r2.c redirections/r3.c redirections/r4.c redirections/r5.c expander/expander_utils1.c expander/expander_utils2.c tokinizer/t1.c tokinizer/t2.c tokinizer/t3.c tokinizer/t4.c  execution/external.c execution/u1.c execution/u2.c execution/u3.c execution/u4.c  builtin/builtin_cmd.c builtin/pwd.c builtin/env.c builtin/env1.c builtin/cd.c builtin/cd1.c builtin/echo.c builtin/export.c builtin/unset.c
 OBJS        =   $(SRC:.c=.o)
 
 # Linker flags (libraries only)
