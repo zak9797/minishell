@@ -62,7 +62,8 @@ typedef struct s_env {
 extern volatile sig_atomic_t	g_sig_int;
 void				handle_sigint(int sig);
 void				init_signals(void);
-int	check_signal();
+int					check_signal();
+int	handle_signals_and_input(char ***args, t_env *env, int *last_exit_status, char *argv);
 
 struct s_token	*tokenize_input(char *input);
 void			print_tokens(struct s_token *head);
@@ -122,15 +123,15 @@ void	execute_pwd(t_env *env);
 void	unset_env_var(t_env *env, t_token *token);
 
 //expander
-char	*str_append(char *dst, const char *src);
-char	*expand_env(const char *str, int *i, t_env *env);
-char	*parse_single_quote(const char *str, int *i);
-char	*parse_unquoted(const char *str, int *i, t_env *env);
-int	has_unclosed_quote(const char *str);
-char	*parse_dquote_end(char *res, const char *str, int *i);
-char	*parse_double_quote(const char *str, int *i, t_env *env);
-char	*expand_all_parts(const char *str, t_env *env);
-char	*expand_all(char *input, t_env *env);
+char *str_append(char *dst, const char *src);
+char *expand_env(const char *str, int *i, t_env *env, char *argv);
+char *parse_single_quote(const char *str, int *i);  // OK — no argv needed
+char *parse_unquoted(const char *str, int *i, t_env *env, char *argv); // <-- FIXED
+int has_unclosed_quote(const char *str);  // OK
+char *parse_dquote_end(char *res, const char *str, int *i); // <-- FIXED
+char *parse_double_quote(const char *str, int *i, t_env *env); // <-- FIXED
+char *expand_all_parts(const char *str, t_env *env, char *argv); // <-- FIXED
+char *expand_all(char *input, t_env *env, char *argv);
 
 
 
@@ -146,12 +147,10 @@ t_token_type get_token_type(char *input, int i);
 char *str_append1(char *s1, char *s2);
 void handle_whitespace(char **current_word, t_token **tokens, int *i, char *input);
 void handle_quotes(char **current_word, int *i, char *input);
-void handle_sigint(int sig);
 void init_noninteractive_signals(void);
-void init_signals(void);
 void add_token(t_token **head, t_token *new);
 void freee_tokens(t_token *head);
-// void free_env_list(t_env *env);
+void free_env_list(t_env *env);
 
 //external
 int execute_simple(char **arg, t_env *env,int last_exit_status);

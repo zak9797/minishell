@@ -16,7 +16,7 @@ void handle_exit(t_token *token) {
 		while (arg[i]) {
 			if (!isdigit(arg[i])) {
 				fprintf(stderr, "minishell: exit: %s: numeric argument required\n", arg);
-				exit(255);
+				exit(2);
 			}
 			i++;
 		}

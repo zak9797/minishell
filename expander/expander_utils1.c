@@ -15,24 +15,49 @@ char	*str_append(char *dst, const char *src)
 	free(dst);
 	return (new);
 }
+char *expand_numeric_var(const char *str, int *i, char *argv)
+{
+	char *result = NULL;
 
-char	*expand_env(const char *str, int *i, t_env *env)
+	// Read first digit after $
+	char digit = str[*i];
+	(*i)++;
+
+	if (digit == '0')
+		result = ft_strdup(argv);  // or "" if you prefer
+	else
+		result = ft_strdup("");  // $1–$9 return empty unless you implement args
+
+	return result;
+}
+
+char	*expand_env(const char *str, int *i, t_env *env, char *argv)
 {
 	int		start;
 	char	*key;
 	char	*val;
 
 	(*i)++;
+
+	// 👇 Handle digits after $
+	if (ft_isdigit(str[*i]))
+		return expand_numeric_var(str, i, argv);
+
 	start = *i;
+
+	// Normal env var parsing
 	while (str[*i] && (ft_isalnum(str[*i]) || str[*i] == '_'))
 		(*i)++;
 	if (start == *i)
 		return (ft_strdup("$"));
+
 	key = ft_strndup(str + start, *i - start);
 	if (!key)
 		return (NULL);
+
 	val = get_env_val(env, key);
 	free(key);
+
 	if (val)
 		return (ft_strdup(val));
 	return (ft_strdup(""));
@@ -60,12 +85,12 @@ char	*parse_single_quote(const char *str, int *i)
 	return (res);
 }
 
-char	*parse_unquoted(const char *str, int *i, t_env *env)
+char	*parse_unquoted(const char *str, int *i, t_env *env, char *argv)
 {
 	char	*res;
 
 	if (str[*i] == '$')
-		return (expand_env(str, i, env));
+		return (expand_env(str, i, env, argv));
 	res = ft_calloc(2, sizeof(char));
 	if (!res)
 		return (NULL);

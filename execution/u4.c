@@ -1,11 +1,5 @@
 #include "minishell.h"
 
-// void custom_handler(int signum)
-// {
-//     (void)signum; // silence unused warning
-//     write(1, "\nminishell$ ", 12); // reset prompt after Ctrl+C
-// }
-
 int fork_and_execute(t_token *cleaned, t_env *env, char **arr, int redir_fd, int last_exit_status)
 {
 	pid_t id = fork();

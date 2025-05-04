@@ -55,7 +55,7 @@ void	handle_assign(char *arg, t_env *env)
 	if (!key || !*key)
 		return ((void)(*equal = '='));
 	value = equal + 1;
-	expanded = expand_all(value, env);
+	expanded = expand_all(value, env, NULL);
 	if (!expanded)
 		return ((void)(*equal = '='));
 	set_env_val(env, key, expanded);

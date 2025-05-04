@@ -42,10 +42,10 @@ int handle_child(t_token *token, t_env *env, int prev_fd, int *pipefd, char **ar
     setup_child_io(prev_fd, pipefd, args);
     handle_redirections(token, env);
     
-    if (check_cmd(token) && !args[1])
+    if (check_cmd(token))
     {
         execute_builtin(token, env, last_exit_status);
-        exit(0);
+        exit(last_exit_status);
     }
     else
     {

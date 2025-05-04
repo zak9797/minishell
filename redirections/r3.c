@@ -1,20 +1,5 @@
 #include "minishell.h"
 
-void signal_handler(int sig)
-{
-    if (sig == SIGINT) {
-        // Handle SIGINT (Ctrl+C)
-        write(STDOUT_FILENO, "\nMinishell: Interrupted by SIGINT\n", 32);
-        // You can add other actions here (like resetting the prompt, etc.)
-    }
-    else if (sig == SIGQUIT) {
-        // Handle SIGQUIT (Ctrl+\)
-        write(STDOUT_FILENO, "Minishell: Quit signal received\n", 32);
-        // You can also handle this signal in a similar manner
-    }
-}
-
-// Handle redirections for built-ins
 int	handle_output_redirect(char *file)
 {
 	int fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -51,7 +36,7 @@ void	read_heredoc_input(int write_fd, const char *delim, t_env *env)
 
 	while (1)
 	{
-		line = expand_all(readline("> "),env);
+		line = expand_all(readline("> "),env, NULL);
 		if (!line || strcmp(line, delim) == 0)
 			break;
 		write(write_fd, line, strlen(line));

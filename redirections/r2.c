@@ -24,20 +24,6 @@ void restore_std_fds(int stdin_backup, int stdout_backup)
     close(stdout_backup);
 }
 
-// Signal handler to deal with the Ctrl+C case in heredocs
-void handle_signal(int sig)
-{
-    if (sig == SIGINT)
-    {
-        // Print a new prompt line when ^C is pressed in heredoc
-        write(STDOUT_FILENO, "\n", 1);
-        replace_history_entry(0, NULL, NULL); // Remove the current line from history
-        rl_on_new_line();  // Go to a new line
-        rl_redisplay();  // Redisplay the prompt
-    }
-}
-
-// Process the heredoc tokens
 void handlee_heredoc(char *delim, t_env *env)
 {
 	int fd = open(".heredoc_tmp", O_CREAT | O_WRONLY | O_TRUNC, 0644);
@@ -46,7 +32,7 @@ void handlee_heredoc(char *delim, t_env *env)
 	char *line;
 	while (1)
 	{
-		line = expand_all(readline("> "),env);
+		line = expand_all(readline("> "),env, NULL);
 		if (!line || strcmp(line, delim) == 0)
 		{
 			free(line);
