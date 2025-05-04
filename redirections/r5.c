@@ -22,9 +22,3 @@ t_token	*clean_command_tokens(t_token *tokens)
 	}
 	return tokens;
 }
-void setup_signal_handlers()
-{
-    // Setting up the signal handlers for SIGINT and SIGQUIT
-    signal(SIGINT, signal_handler); // SIGINT (Ctrl+C)
-    signal(SIGQUIT, signal_handler); // SIGQUIT (Ctrl+\)
-}

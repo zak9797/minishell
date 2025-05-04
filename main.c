@@ -1,35 +1,40 @@
 #include "minishell.h"
 
-t_shell_state g_shell = {
-    .last_exit_status = 0,
-    .signal_flag = 0
-};
+volatile sig_atomic_t	g_sig_int = 0;
 
-// Check if a signal was caught (Ctrl+C)
-int check_signal(t_token *token)
+void	handle_sigint(int sig)
 {
-    if (g_shell.signal_flag)
-    {
-        // This handles Ctrl+C before command execution
-        g_shell.signal_flag = 0;
-        g_shell.last_exit_status = 130;
-        if (token)
-            token->exit_status = 130;
-        return 1;
-    }
-    return 0;
+	(void)sig;
+	g_sig_int = 1;
+	write(STDOUT_FILENO, "\n", 1); // move to new line
+	rl_replace_line("", 0);        // clear current line buffer
+	rl_on_new_line();              // tell readline we're on a new line
+	rl_redisplay();                // redraw the prompt
 }
 
-// Main function to handle the shell
-void	handle_signal_flag(void)
+int check_signal()
 {
-	if (g_shell.signal_flag)
+	if (g_sig_int)
 	{
-		g_shell.signal_flag = 0;
-		g_shell.last_exit_status = 130;
+		dup2(STDOUT_FILENO, STDIN_FILENO);
+		// g_sig_int = 0;
+		return (1);
 	}
+	return (0);
 }
 
+void	init_signals(void)
+{
+	struct sigaction	sa;
+
+	rl_catch_signals = 0;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = handle_sigint;
+	sigaction(SIGINT, &sa, NULL);
+	sa.sa_handler = SIG_IGN;
+	sigaction(SIGQUIT, &sa, NULL);
+}
 char	**read_and_expand_input(t_env *env)
 {
 	char	*input = readline("minishell$ ");
@@ -53,39 +58,44 @@ char	**read_and_expand_input(t_env *env)
 	return (args);
 }
 
-void	execution_loop(t_env *env)
+void execution_loop(t_env *env)
 {
-	int i;
-	char	**args;
+	int last_exit_status =0;
+    int i;
+    char **args;
+    init_signals();
 
-	
-	while (1)
-	{
-		i= 0;
-		handle_signal_flag();
-		args = read_and_expand_input(env);
-		if (args == NULL)
-			break;
-		if (args == (char **)1 || !args || !args[0])
+    while (1)
+    {
+		check_signal();
+		if (g_sig_int)
 		{
-			if (args != (char **)1)
-				free_split(args);
+			last_exit_status = 130;
+			g_sig_int = 0;
 			continue;
 		}
-		if (args[1] == NULL)
-			execute_simple(args, env);
-		else
-			execute_complex(args, env);
-
-			
-		while(args[i])
+		
+        i = 0;
+        args = read_and_expand_input(env);
+        if (args == NULL  && !g_sig_int)
 		{
-			t_token *tokens = tokenize_input(args[i]);
-			freee_tokens(tokens);
-			i++;
+			write(STDOUT_FILENO, "exit\n", 5);
+            break;
 		}
-		free_split(args);
-	}
+        if (args == (char **)1 || !args || !args[0])
+        {
+            if (args != (char **)1)
+                free_split(args);
+            continue;
+        }
+        if (args[1] == NULL)
+		{
+			last_exit_status = execute_simple(args, env, last_exit_status);
+		}
+        else
+			last_exit_status = execute_complex(args, env, last_exit_status);
+        free_split(args);
+    }
 }
 void free_env_list(t_env *env)
 {
@@ -104,7 +114,6 @@ void free_env_list(t_env *env)
 int	main(int argc, char **argv, char **envp)
 {
 	t_env *env;
-
 	(void)argc;
 	(void)argv;
 	env = init_env(envp);

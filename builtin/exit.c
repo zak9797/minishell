@@ -1,37 +1,47 @@
 #include "../minishell.h"
 
-void execute_exit(t_env *env, t_token *arg_token)
-{
-    long long exit_code;
-    int argc = 0;
-    t_token *tmp = arg_token;
+void handle_exit(t_token *token) {
+	int status = 0;
 
-    write(2, "exit\n", 5); // Always print "exit" first
+	printf("exit\n");
 
-    // Count number of arguments
-    while (tmp)
-    {
-        argc++;
-        tmp = tmp->next;
-    }
+	t_token *arg_token = token->next;
 
-    if (argc == 0) // No arguments: exit with global status
-        exit(g_exit_status);
+	if (arg_token) {
+		char *arg = arg_token->value;
 
-    if (!is_numeric(arg_token->value)) // Non-numeric argument
-    {
-        dprintf(2, "bash: exit: %s: numeric argument required\n", arg_token->value);
-        arg_token->exit_status = 2;
-        exit(255);
-    }
+		// Validate numeric argument
+		int i = 0;
+		if (arg[i] == '+' || arg[i] == '-') i++; // optional sign
+		while (arg[i]) {
+			if (!isdigit(arg[i])) {
+				fprintf(stderr, "minishell: exit: %s: numeric argument required\n", arg);
+				exit(255);
+			}
+			i++;
+		}
 
-    if (argc > 1) // Too many arguments
-    {
-        dprintf(2, "bash: exit: too many arguments\n");
-        arg_token->exit_status = 1;
-        return; // do NOT exit
-    }
+		if (arg_token->next) {
+			// Too many arguments
+			fprintf(stderr, "minishell: exit: too many arguments\n");
+			// Normally you'd set a global error var here like g_exit_status = 1;
+			return;
+		}
 
-    exit_code = ft_atoll(arg_token->value);
-    exit(exit_code % 256); // Bash behavior: exit with (code % 256)
+		status = atoi(arg) % 256;
+	}
+
+	exit(status);
+}
+
+void execute_exit(t_token *token) {
+	if (!token || !token->value)
+		return;
+
+	if (strcmp(token->value, "exit") == 0) {
+		handle_exit(token);
+		return;
+	}
+
+	// Handle other commands...
 }

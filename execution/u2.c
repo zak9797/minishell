@@ -42,7 +42,7 @@ void	error_norm(char *text)
 	exit(EXIT_FAILURE);
 }
 
-char	**check_cmd_path(char **cmd, t_env *env)
+char	**check_cmd_path(char **cmd, t_env *env, int last_exit_status)
 {
 	char	*path_env;
 	char	*temp;
@@ -50,31 +50,36 @@ char	**check_cmd_path(char **cmd, t_env *env)
 	path_env = NULL;
 	if (cmd == NULL || *cmd == NULL)
 		return (cmd);
+
+	// Check for absolute or relative path (e.g., "./", "/bin/ls")
 	if (ft_strncmp(cmd[0], ".", 1) == 0 || ft_strncmp(cmd[0], "/", 1) == 0)
 	{
 		if (access(cmd[0], F_OK | X_OK) != 0)
-		g_shell.last_exit_status = 127;
-		printf("Error: %s: %s\n", cmd[0], strerror(errno));
+		{
+			last_exit_status = 127;
+			printf("Error: %s: %s\n", cmd[0], strerror(errno));
+		}
 	}
 	else
 	{
 		path_env = get_env_path(env);
-		
-		// Check if path_env is NULL
 		if (path_env != NULL)
 		{
 			temp = check_cmd_exist(cmd, path_env);
 			if (temp == NULL)
+			{
+				// Command not found in PATH
+				last_exit_status = 127;
 				return (NULL);
-	
+			}
 			free(cmd[0]);
 			cmd[0] = temp;
 		}
 		else
 		{
-			// Handle the case where path_env is NULL
-			// You can either return NULL or handle the error as needed
-			return (NULL); // or use custom error handling
+			// PATH environment variable is not set
+			last_exit_status = 127;
+			return (NULL);
 		}
 	}
 	return (cmd);
@@ -88,7 +93,7 @@ char	*get_env_path(t_env *env)
 			return (env->value);
 		env = env->next;
 	}
-	g_shell.last_exit_status = 127;
+	// g_shell.last_exit_status = 127;
 	return (NULL);
 }
 

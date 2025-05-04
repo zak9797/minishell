@@ -45,19 +45,20 @@ int	handle_input_redirect(char *file)
 	return (0);
 }
 
-void	read_heredoc_input(int write_fd, const char *delim)
+void	read_heredoc_input(int write_fd, const char *delim, t_env *env)
 {
 	char *line;
 
 	while (1)
 	{
-		line = readline("> ");
+		line = expand_all(readline("> "),env);
 		if (!line || strcmp(line, delim) == 0)
 			break;
 		write(write_fd, line, strlen(line));
 		write(write_fd, "\n", 1);
 		free(line);
 	}
+	init_signals();
 	free(line);
 	close(write_fd);
 	exit(0);

@@ -38,18 +38,15 @@ void handle_signal(int sig)
 }
 
 // Process the heredoc tokens
-void handlee_heredoc(char *delim)
+void handlee_heredoc(char *delim, t_env *env)
 {
 	int fd = open(".heredoc_tmp", O_CREAT | O_WRONLY | O_TRUNC, 0644);
 	if (fd == -1)
 		return (perror("open heredoc temp file"));
-
-	signal(SIGINT, handle_signal);
-
 	char *line;
 	while (1)
 	{
-		line = readline("> ");
+		line = expand_all(readline("> "),env);
 		if (!line || strcmp(line, delim) == 0)
 		{
 			free(line);
@@ -59,11 +56,10 @@ void handlee_heredoc(char *delim)
 		write(fd, "\n", 1);
 		free(line);
 	}
-	signal(SIGINT, SIG_DFL);
 	close(fd);
 }
 
-void process_heredocs(char **args)
+void process_heredocs(char **args, t_env *env)
 {
 	int i = 0;
 	while (args[i])
@@ -73,7 +69,7 @@ void process_heredocs(char **args)
 		while (curr)
 		{
 			if (curr->type == T_HEREDOC && curr->next)
-				handlee_heredoc(curr->next->value);
+				handlee_heredoc((curr->next->value),env);
 			curr = curr->next;
 		}
 		free_tokens(tokens);

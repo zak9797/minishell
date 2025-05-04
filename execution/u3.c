@@ -20,6 +20,7 @@ char *search_executable_in_dirs(char **cmd, char **dir)
 			return (free_norm(dir, path));
 		free(path);
 	}
+	free_split(dir);
 	return (NULL);
 }
 
@@ -36,7 +37,7 @@ char *check_cmd_exist(char **cmd, char *path_env)
 	if (path)
 		return (path);
 
-	g_shell.last_exit_status = 127;
+	// g_shell.last_exit_status = 127;
 	char *tmp = ft_strjoin(cmd[0], ": command not found\n");
 	write(2, tmp, ft_strlen(tmp));
 	free(tmp);

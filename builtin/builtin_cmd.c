@@ -24,8 +24,9 @@ int	check_cmd(t_token *cmd_token)
 	return (is_builtin(cmd_token->value));
 }
 
-void	dispatch_builtin(t_token *cmd_token, t_env *env)
+int  dispatch_builtin(t_token *cmd_token, t_env *env, int last_exit_status)
 {
+	int q =0;
 	t_token	*next;
 
 	next = cmd_token->next;
@@ -36,16 +37,23 @@ void	dispatch_builtin(t_token *cmd_token, t_env *env)
 	else if (ft_strcmp(cmd_token->value, "cd") == 0)
 		execute_cd(next, env);
 	else if (ft_strcmp(cmd_token->value, "echo") == 0)
-		execute_echo(next, env);
+		q = execute_echo(next, env, last_exit_status);
 	else if (ft_strcmp(cmd_token->value, "export") == 0)
 		execute_export(next, env);
 	else if (ft_strcmp(cmd_token->value, "unset") == 0)
 		unset_env_var(env, next);
+	else if (ft_strcmp(cmd_token->value, "exit") == 0)
+		execute_exit(cmd_token);
+
+	return q;
+	
 }
 
-void	execute_builtin(t_token *tokens, t_env *env)
+int execute_builtin(t_token *tokens, t_env *env , int last_exit_status)
 {
-	if (!tokens || !check_cmd(tokens))
-		return ;
-	dispatch_builtin(tokens, env);
+	int i= 0;
+	// if (!tokens || !check_cmd(tokens))
+	// 	return ;
+	i = dispatch_builtin(tokens, env, last_exit_status);
+	return i;
 }

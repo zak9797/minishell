@@ -33,11 +33,18 @@ void handle_single_operator(char **current_word, t_token **tokens, int *i, char 
 	(*i)++;
 }
 
-void free_split(char **arr)
+void free_split(char **split)
 {
-    if (!arr)
+    int i;
+
+    if (!split)
         return;
-    for (int i = 0; arr[i]; i++)
-        free(arr[i]);
-    free(arr);
+
+    i = 0;
+    while (split[i])
+    {
+        free(split[i]); // Free each string
+        i++;
+    }
+    free(split); // Free the array of strings itself
 }

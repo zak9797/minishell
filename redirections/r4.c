@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-int	handle_heredoc(t_token *curr)
+int	handle_heredoc(t_token *curr, t_env *env)
 {
 	char	*delim = NULL;
 	t_token	*tmp = curr;
@@ -14,10 +14,10 @@ int	handle_heredoc(t_token *curr)
 	}
 	if (!delim || pipe(pipefd) == -1)
 		return (-1);
-	if (fork() == 0)
+	 if (fork() == 0)
 	{
 		close(pipefd[0]);
-		read_heredoc_input(pipefd[1], delim);
+		read_heredoc_input(pipefd[1], delim, env);
 	}
 	wait(NULL);
 	close(pipefd[1]);
@@ -26,7 +26,7 @@ int	handle_heredoc(t_token *curr)
 	return (0);
 }
 
-int	process_redirect_token(t_token *curr)
+int	process_redirect_token(t_token *curr, t_env *env)
 {
 	char *file = curr->next->value;
 
@@ -38,12 +38,12 @@ int	process_redirect_token(t_token *curr)
 		if (handle_input_redirect(file) < 0) return (-1);
 	if (curr->type == T_HEREDOC)
 	{
-		if (handle_heredoc(curr) < 0) return (-1);
+		if (handle_heredoc((curr),env) < 0) return (-1);
 	}
 	return (0);
 }
 
-int	redirect_for_builtin(t_token *tokens)
+int	redirect_for_builtin(t_token *tokens,t_env *env)
 {
 	int original_stdin = dup(STDIN_FILENO);
 	int original_stdout = dup(STDOUT_FILENO);
@@ -54,7 +54,7 @@ int	redirect_for_builtin(t_token *tokens)
 		if ((curr->type == T_OUTPUT_REDIRECT || curr->type == T_APPEND_OUTPUT ||
 			curr->type == T_INPUT_REDIRECT || curr->type == T_HEREDOC) && curr->next)
 		{
-			if (process_redirect_token(curr) < 0)
+			if (process_redirect_token((curr), env) < 0)
 				return (-1);
 			if (curr->type == T_HEREDOC)
 				curr = curr->next;
