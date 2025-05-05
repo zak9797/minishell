@@ -9,12 +9,10 @@ char	**read_and_expand_input(t_env *env, char *argv)
 	char	**args;
 
 	input = readline("minishell$ ");
-	if (!input)
-		return (NULL);
-	if (input[0] == '\0')
+	if (!input || input[0] == '\0')
 	{
 		free(input);
-		return ((char **)1);
+		return (NULL);  // caller checks for NULL and skips
 	}
 	add_history(input);
 	expanding = expand_all(input, env, argv);
@@ -28,19 +26,20 @@ char	**read_and_expand_input(t_env *env, char *argv)
 
 int	handle_signals_and_input(char ***args, t_env *env, int *last_exit_status, char *argv)
 {
-	check_signal();
 	if (g_sig_int)
 	{
 		*last_exit_status = 130;
-		g_sig_int = 0;
+		 g_sig_int = 0;
 		return (0);
 	}
-	*args = read_and_expand_input(env, argv);
 	if (*args == NULL && !g_sig_int)
 	{
 		write(STDOUT_FILENO, "exit\n", 5);
 		return (-1);
 	}
+	*args = read_and_expand_input(env, argv);
+
+
 	return (1);
 }
 
@@ -69,6 +68,7 @@ void	execution_loop(t_env *env, char *argv)
 	init_signals();
 	while (1)
 	{
+		check_signal();
 		status = handle_signals_and_input(&args, env, &last_exit_status, argv);
 		if (status == -1)
 			break ;

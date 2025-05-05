@@ -33,7 +33,7 @@ int fork_and_execute(t_token *cleaned, t_env *env, char **arr, int redir_fd, int
 		int exit_status = 0;
 		int status;
 		waitpid(id, &status, 0);
-		restore_stdio(redir_fd);
+		(void) redir_fd;
 		if (WIFSIGNALED(status))
 		{
 			int sig = WTERMSIG(status);
@@ -51,6 +51,7 @@ int fork_and_execute(t_token *cleaned, t_env *env, char **arr, int redir_fd, int
 		free_env_copy(arr);
 		freee_tokens(cleaned);
 		init_signals();
+		restore_stdio(redir_fd);
 		return exit_status;
 		// free_split(args); <-- only needed if you malloc'd args
 	}

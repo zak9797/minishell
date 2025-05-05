@@ -34,7 +34,7 @@ char *resolve_cd_path(t_token *arg, t_env *env)
 			printf("%s\n", path);
 		return (strdup(path));
 	}
-	if (path[0] == '~')
+	if (path[0] == '~' || (path[0] == '-' && path[1] == '-'))
 		return (expand_home_path(path, env));
 	return (strdup(path));
 }

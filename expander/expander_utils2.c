@@ -21,7 +21,7 @@ char	*parse_dquote_end(char *res, const char *str, int *i)
 	return (tmp);
 }
 
-char	*parse_double_quote(const char *str, int *i, t_env *env)
+char	*parse_double_quote(const char *str, int *i, t_env *env, char *argv)
 {
 	char	*res;
 	char	*frag;
@@ -33,7 +33,7 @@ char	*parse_double_quote(const char *str, int *i, t_env *env)
 	while (str[*i] && str[*i] != '"')
 	{
 		if (str[*i] == '$')
-			frag = expand_env(str, i, env, NULL);
+			frag = expand_env(str, i, env, argv);
 		else if (!(frag = ft_calloc(2, sizeof(char))))
 			return (free(res), NULL);
 		else
@@ -62,7 +62,7 @@ char	*expand_all_parts(const char *str, t_env *env, char *argv)
 		if (str[i] == '\'')
 			part = parse_single_quote(str, &i);
 		else if (str[i] == '"')
-			part = parse_double_quote(str, &i, env);
+			part = parse_double_quote(str, &i, env, argv);
 		else
 			part = parse_unquoted(str, &i, env, argv);
 		if (!part)

@@ -1,3 +1,7 @@
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -129,7 +133,7 @@ char *parse_single_quote(const char *str, int *i);  // OK — no argv needed
 char *parse_unquoted(const char *str, int *i, t_env *env, char *argv); // <-- FIXED
 int has_unclosed_quote(const char *str);  // OK
 char *parse_dquote_end(char *res, const char *str, int *i); // <-- FIXED
-char *parse_double_quote(const char *str, int *i, t_env *env); // <-- FIXED
+char *parse_double_quote(const char *str, int *i, t_env *env, char *argv); // <-- FIXED
 char *expand_all_parts(const char *str, t_env *env, char *argv); // <-- FIXED
 char *expand_all(char *input, t_env *env, char *argv);
 

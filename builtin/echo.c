@@ -1,5 +1,27 @@
 #include "../minishell.h"
 
+// char *expand_vars(const char *input)
+// {
+// 	char *result = malloc(...); // dynamically build the result
+// 	size_t i = 0, j = 0;
+// 	while (input[i])
+// 	{
+// 		if (input[i] == '$' && input[i + 1] == '?')
+// 		{
+// 			char *code = ft_itoa(last_exit_status);
+// 			strcpy(&result[j], code);
+// 			j += strlen(code);
+// 			i += 2;
+// 			free(code);
+// 		}
+// 		else
+// 		{
+// 			result[j++] = input[i++];
+// 		}
+// 	}
+// 	result[j] = '\0';
+// 	return result;
+// }
 int	is_n_flag(const char *str)
 {
 	int	i;
@@ -18,7 +40,7 @@ int	is_n_flag(const char *str)
 
 int print_arg_value(t_token *arg, int last_exit_status)
 {
-	if (arg->value && ft_strcmp(arg->value, "$?") == 0)
+	 if(arg->value && ft_strcmp(arg->value, "$?") == 0)
 	{
 		check_signal();
 		if (g_sig_int)
