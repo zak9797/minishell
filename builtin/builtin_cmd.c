@@ -35,7 +35,7 @@ int  dispatch_builtin(t_token *cmd_token, t_env *env, int last_exit_status)
 	else if (ft_strcmp(cmd_token->value, "env") == 0)
 		execute_env(env);
 	else if (ft_strcmp(cmd_token->value, "cd") == 0)
-		execute_cd(next, env);
+		q = execute_cd(next, env);
 	else if (ft_strcmp(cmd_token->value, "echo") == 0)
 		q = execute_echo(next, env, last_exit_status);
 	else if (ft_strcmp(cmd_token->value, "export") == 0)

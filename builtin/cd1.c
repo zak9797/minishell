@@ -39,29 +39,31 @@ char *resolve_cd_path(t_token *arg, t_env *env)
 	return (strdup(path));
 }
 
-void execute_cd(t_token *arg, t_env *env)
+int execute_cd(t_token *arg, t_env *env)
 {
 	char *path;
 	char *oldpwd;
 
 	path = resolve_cd_path(arg, env);
 	if (!path)
-		return;
+		return (1); // error resolving path
+
 	oldpwd = getcwd(NULL, 0);
 	if (!oldpwd)
 	{
 		perror("getcwd before chdir");
 		free(path);
-		return;
+		return (1);
 	}
 	if (chdir(path) == -1)
 	{
 		perror("cd");
 		free(path);
 		free(oldpwd);
-		return;
+		return (1); // chdir failed
 	}
 	update_pwd_env(env, oldpwd);
 	free(path);
 	free(oldpwd);
+	return (0); // success
 }

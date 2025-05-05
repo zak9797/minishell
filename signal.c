@@ -14,8 +14,6 @@ int	check_signal(void)
 {
 	if (g_sig_int)
 	{
-		g_sig_int = 0;
-		// dup2(STDOUT_FILENO, STDIN_FILENO);
 		return (1);
 	}
 	return (0);

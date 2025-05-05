@@ -38,7 +38,7 @@ void	read_heredoc_input(int write_fd, const char *delim, t_env *env)
 	{
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
-		line = expand_all(readline("> "),env, NULL);
+		line = expand_all(readline("> "),env, NULL, 0);
 		if (!line || strcmp(line, delim) == 0)
 			break;
 		write(write_fd, line, strlen(line));

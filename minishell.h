@@ -67,7 +67,7 @@ extern volatile sig_atomic_t	g_sig_int;
 void				handle_sigint(int sig);
 void				init_signals(void);
 int					check_signal();
-int	handle_signals_and_input(char ***args, t_env *env, int *last_exit_status, char *argv);
+int	handle_signals_and_input(char ***args, t_env *env, char *argv, int *last_exit_status);
 
 struct s_token	*tokenize_input(char *input);
 void			print_tokens(struct s_token *head);
@@ -81,7 +81,7 @@ void	set_env_val(t_env *env, char *key, char *val);
 void	update_pwd_env(t_env *env, char *oldpwd);
 char *expand_home_path(char *path, t_env *env);
 char *resolve_cd_path(t_token *arg, t_env *env);
-void execute_cd(t_token *arg, t_env *env);
+int execute_cd(t_token *arg, t_env *env);
 /*
 ******************************builtin_cnd****************************************
 */
@@ -128,14 +128,14 @@ void	unset_env_var(t_env *env, t_token *token);
 
 //expander
 char *str_append(char *dst, const char *src);
-char *expand_env(const char *str, int *i, t_env *env, char *argv);
+char *expand_env(const char *str, int *i, t_env *env, char *argv, int *last_exit_status);
 char *parse_single_quote(const char *str, int *i);  // OK — no argv needed
-char *parse_unquoted(const char *str, int *i, t_env *env, char *argv); // <-- FIXED
+char *parse_unquoted(const char *str, int *i, t_env *env, char *argv, int *last_exit_status); // <-- FIXED
 int has_unclosed_quote(const char *str);  // OK
 char *parse_dquote_end(char *res, const char *str, int *i); // <-- FIXED
-char *parse_double_quote(const char *str, int *i, t_env *env, char *argv); // <-- FIXED
-char *expand_all_parts(const char *str, t_env *env, char *argv); // <-- FIXED
-char *expand_all(char *input, t_env *env, char *argv);
+char *parse_double_quote(const char *str, int *i, t_env *env, char *argv, int *last_exit_status); // <-- FIXED
+char *expand_all_parts(const char *str, t_env *env, char *argv, int *last_exit_status); // <-- FIXED
+char *expand_all(char *input, t_env *env, char *argv, int *last_exit_status);
 
 
 

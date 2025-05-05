@@ -31,13 +31,29 @@ char *expand_numeric_var(const char *str, int *i, char *argv)
 	return result;
 }
 
-char	*expand_env(const char *str, int *i, t_env *env, char *argv)
+char	*expand_env(const char *str, int *i, t_env *env, char *argv, int *last_exit_status)
 {
 	int		start;
 	char	*key;
 	char	*val;
 
 	(*i)++;
+
+	// ✅ Handle special variable $?
+	if (str[*i] == '?')
+	{
+			check_signal();
+			if (g_sig_int)
+			{
+				// printf("%d", *last_exit_status);
+				*last_exit_status = 130;
+				g_sig_int = 0;
+			}
+			// printf("%d", *last_exit_status);
+			// last_exit_status=0;
+		(*i)++;
+		return (ft_itoa(*last_exit_status));  // Return exit status as string
+	}
 
 	// 👇 Handle digits after $
 	if (ft_isdigit(str[*i]))
@@ -85,12 +101,12 @@ char	*parse_single_quote(const char *str, int *i)
 	return (res);
 }
 
-char	*parse_unquoted(const char *str, int *i, t_env *env, char *argv)
+char	*parse_unquoted(const char *str, int *i, t_env *env, char *argv, int *last_exit_status)
 {
 	char	*res;
 
 	if (str[*i] == '$')
-		return (expand_env(str, i, env, argv));
+		return (expand_env(str, i, env, argv,last_exit_status));
 	res = ft_calloc(2, sizeof(char));
 	if (!res)
 		return (NULL);

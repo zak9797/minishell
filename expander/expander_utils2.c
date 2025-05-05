@@ -21,7 +21,7 @@ char	*parse_dquote_end(char *res, const char *str, int *i)
 	return (tmp);
 }
 
-char	*parse_double_quote(const char *str, int *i, t_env *env, char *argv)
+char	*parse_double_quote(const char *str, int *i, t_env *env, char *argv, int *last_exit_status)
 {
 	char	*res;
 	char	*frag;
@@ -33,7 +33,7 @@ char	*parse_double_quote(const char *str, int *i, t_env *env, char *argv)
 	while (str[*i] && str[*i] != '"')
 	{
 		if (str[*i] == '$')
-			frag = expand_env(str, i, env, argv);
+			frag = expand_env(str, i, env, argv, last_exit_status);
 		else if (!(frag = ft_calloc(2, sizeof(char))))
 			return (free(res), NULL);
 		else
@@ -47,7 +47,7 @@ char	*parse_double_quote(const char *str, int *i, t_env *env, char *argv)
 	return (parse_dquote_end(res, str, i));
 }
 
-char	*expand_all_parts(const char *str, t_env *env, char *argv)
+char	*expand_all_parts(const char *str, t_env *env, char *argv, int *last_exit_status)
 {
 	int		i;
 	char	*res;
@@ -62,9 +62,9 @@ char	*expand_all_parts(const char *str, t_env *env, char *argv)
 		if (str[i] == '\'')
 			part = parse_single_quote(str, &i);
 		else if (str[i] == '"')
-			part = parse_double_quote(str, &i, env, argv);
+			part = parse_double_quote(str, &i, env, argv, last_exit_status);
 		else
-			part = parse_unquoted(str, &i, env, argv);
+			part = parse_unquoted(str, &i, env, argv, last_exit_status);
 		if (!part)
 			return (free(res), NULL);
 		res = str_append(res, part);
@@ -75,7 +75,7 @@ char	*expand_all_parts(const char *str, t_env *env, char *argv)
 	return (res);
 }
 
-char	*expand_all(char *input, t_env *env, char *argv)
+char	*expand_all(char *input, t_env *env, char *argv, int *last_exit_status)
 {
 	if (!input)
 		return (NULL);
@@ -84,5 +84,5 @@ char	*expand_all(char *input, t_env *env, char *argv)
 		ft_putendl_fd("syntax error: unclosed quote", 2);
 		return (NULL);
 	}
-	return (expand_all_parts(input, env, argv));
+	return (expand_all_parts(input, env, argv, last_exit_status));
 }

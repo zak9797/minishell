@@ -32,7 +32,7 @@ void handlee_heredoc(char *delim, t_env *env)
 	char *line;
 	while (1)
 	{
-		line = expand_all(readline("> "),env, NULL);
+		line = expand_all(readline("> "),env, NULL, 0);
 		if (!line || strcmp(line, delim) == 0)
 		{
 			free(line);
